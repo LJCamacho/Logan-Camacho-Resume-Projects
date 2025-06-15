@@ -1,0 +1,245 @@
+/storage/icds/RISE/sw8/spark-3.3.0-bin-hadoop3/sbin/start-master.sh
+org.apache.spark.deploy.master.Master running as process 1448210.  Stop it first.
+/storage/icds/RISE/sw8/spark-3.3.0-bin-hadoop3/bin/spark-class org.apache.spark.deploy.worker.Worker --work-dir /storage/work/ljc5809/MiniProj2 spark://p-bc-5088:7077
+/storage/icds/RISE/sw8/anaconda/anaconda3/lib/python3.9/site-packages/scipy/__init__.py:146: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.24.1
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
+25/04/06 19:28:08 INFO SparkContext: Running Spark version 3.3.0
+25/04/06 19:28:08 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+25/04/06 19:28:08 INFO ResourceUtils: ==============================================================
+25/04/06 19:28:08 INFO ResourceUtils: No custom resources configured for spark.driver.
+25/04/06 19:28:08 INFO ResourceUtils: ==============================================================
+25/04/06 19:28:08 INFO SparkContext: Submitted application: MiniProject 2 k-meas Clustering using OHE
+25/04/06 19:28:08 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(cores -> name: cores, amount: 1, script: , vendor: , memory -> name: memory, amount: 1024, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+25/04/06 19:28:08 INFO ResourceProfile: Limiting resource is cpu
+25/04/06 19:28:08 INFO ResourceProfileManager: Added ResourceProfile id: 0
+25/04/06 19:28:08 INFO SecurityManager: Changing view acls to: ljc5809
+25/04/06 19:28:08 INFO SecurityManager: Changing modify acls to: ljc5809
+25/04/06 19:28:08 INFO SecurityManager: Changing view acls groups to: 
+25/04/06 19:28:08 INFO SecurityManager: Changing modify acls groups to: 
+25/04/06 19:28:08 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(ljc5809); groups with view permissions: Set(); users  with modify permissions: Set(ljc5809); groups with modify permissions: Set()
+25/04/06 19:28:08 INFO Utils: Successfully started service 'sparkDriver' on port 38091.
+25/04/06 19:28:08 INFO SparkEnv: Registering MapOutputTracker
+25/04/06 19:28:08 INFO SparkEnv: Registering BlockManagerMaster
+25/04/06 19:28:08 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+25/04/06 19:28:08 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+25/04/06 19:28:08 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+25/04/06 19:28:08 INFO DiskBlockManager: Created local directory at /tmp/blockmgr-20cd7940-976b-4984-a178-ef54d59f8e1b
+25/04/06 19:28:08 INFO MemoryStore: MemoryStore started with capacity 434.4 MiB
+25/04/06 19:28:08 INFO SparkEnv: Registering OutputCommitCoordinator
+25/04/06 19:28:09 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+25/04/06 19:28:09 INFO StandaloneAppClient$ClientEndpoint: Connecting to master spark://p-bc-5088:7077...
+25/04/06 19:28:09 INFO TransportClientFactory: Successfully created connection to p-bc-5088/10.6.8.98:7077 after 33 ms (0 ms spent in bootstraps)
+25/04/06 19:28:09 INFO StandaloneSchedulerBackend: Connected to Spark cluster with app ID app-20250406192809-0002
+25/04/06 19:28:09 INFO StandaloneAppClient$ClientEndpoint: Executor added: app-20250406192809-0002/0 on worker-20250406190604-10.6.8.98-35459 (10.6.8.98:35459) with 4 core(s)
+25/04/06 19:28:09 INFO StandaloneSchedulerBackend: Granted executor ID app-20250406192809-0002/0 on hostPort 10.6.8.98:35459 with 4 core(s), 1024.0 MiB RAM
+25/04/06 19:28:09 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 44159.
+25/04/06 19:28:09 INFO NettyBlockTransferService: Server created on p-bc-5088.2e.hpc.psu.edu:44159
+25/04/06 19:28:09 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+25/04/06 19:28:09 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, p-bc-5088.2e.hpc.psu.edu, 44159, None)
+25/04/06 19:28:09 INFO BlockManagerMasterEndpoint: Registering block manager p-bc-5088.2e.hpc.psu.edu:44159 with 434.4 MiB RAM, BlockManagerId(driver, p-bc-5088.2e.hpc.psu.edu, 44159, None)
+25/04/06 19:28:09 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, p-bc-5088.2e.hpc.psu.edu, 44159, None)
+25/04/06 19:28:09 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, p-bc-5088.2e.hpc.psu.edu, 44159, None)
+25/04/06 19:28:09 INFO StandaloneAppClient$ClientEndpoint: Executor updated: app-20250406192809-0002/0 is now RUNNING
+25/04/06 19:28:09 INFO StandaloneSchedulerBackend: SchedulerBackend is ready for scheduling beginning after reached minRegisteredResourcesRatio: 0.0
+root
+ |-- _c0: integer (nullable = true)
+ |-- id: integer (nullable = true)
+ |-- numports: integer (nullable = true)
+ |-- lifetime: decimal(10,0) (nullable = true)
+ |-- Bytes: integer (nullable = true)
+ |-- Packets: integer (nullable = true)
+ |-- average_packetsize: integer (nullable = true)
+ |-- MinUniqueDests: integer (nullable = true)
+ |-- MaxUniqueDests: integer (nullable = true)
+ |-- MinUniqueDest24s: integer (nullable = true)
+ |-- MaxUniqueDest24s: integer (nullable = true)
+ |-- average_lifetime: decimal(10,0) (nullable = true)
+ |-- mirai: boolean (nullable = true)
+ |-- zmap: boolean (nullable = true)
+ |-- masscan: boolean (nullable = true)
+ |-- country: string (nullable = true)
+ |-- traffic_types_scanned_str: string (nullable = true)
+ |-- ports_scanned_str: string (nullable = true)
+ |-- host_tags_per_censys: string (nullable = true)
+ |-- host_services_per_censys: string (nullable = true)
+
++--------+-----+
+|numports|count|
++--------+-----+
+|   12139|    1|
+|   38150|    1|
+|   35756|    1|
+|   35133|    1|
+|   35211|    1|
+|    1823|    1|
+|   36295|    1|
+|     939|    1|
+|   36794|    1|
+|     731|    1|
++--------+-----+
+only showing top 10 rows
+
+root
+ |-- _c0: integer (nullable = true)
+ |-- id: integer (nullable = true)
+ |-- numports: integer (nullable = true)
+ |-- lifetime: decimal(10,0) (nullable = true)
+ |-- Bytes: integer (nullable = true)
+ |-- Packets: integer (nullable = true)
+ |-- average_packetsize: integer (nullable = true)
+ |-- MinUniqueDests: integer (nullable = true)
+ |-- MaxUniqueDests: integer (nullable = true)
+ |-- MinUniqueDest24s: integer (nullable = true)
+ |-- MaxUniqueDest24s: integer (nullable = true)
+ |-- average_lifetime: decimal(10,0) (nullable = true)
+ |-- mirai: boolean (nullable = true)
+ |-- zmap: boolean (nullable = true)
+ |-- masscan: boolean (nullable = true)
+ |-- country: string (nullable = true)
+ |-- traffic_types_scanned_str: string (nullable = true)
+ |-- ports_scanned_str: string (nullable = true)
+ |-- host_tags_per_censys: string (nullable = true)
+ |-- host_services_per_censys: string (nullable = true)
+ |-- Ports_Array: array (nullable = true)
+ |    |-- element: string (containsNull = false)
+ |-- Port17132: boolean (nullable = true)
+ |-- Port17140: boolean (nullable = true)
+ |-- Port17128: boolean (nullable = true)
+ |-- Port17130: boolean (nullable = true)
+ |-- Port17138: boolean (nullable = true)
+ |-- Port17136: boolean (nullable = true)
+ |-- Port17134: boolean (nullable = true)
+ |-- Port17142: boolean (nullable = true)
+ |-- Port80: boolean (nullable = true)
+ |-- Port8080: boolean (nullable = true)
+ |-- Port23: boolean (nullable = true)
+ |-- Port2323: boolean (nullable = true)
+ |-- Port81: boolean (nullable = true)
+ |-- Port5555: boolean (nullable = true)
+ |-- Port1023: boolean (nullable = true)
+ |-- Port52869: boolean (nullable = true)
+ |-- Port8443: boolean (nullable = true)
+ |-- Port49152: boolean (nullable = true)
+ |-- Port7574: boolean (nullable = true)
+ |-- Port37215: boolean (nullable = true)
+ |-- Port54594: boolean (nullable = true)
+ |-- Port34218: boolean (nullable = true)
+ |-- Port34226: boolean (nullable = true)
+ |-- Port34224: boolean (nullable = true)
+ |-- Port34228: boolean (nullable = true)
+ |-- Port34216: boolean (nullable = true)
+ |-- Port34220: boolean (nullable = true)
+ |-- Port33964: boolean (nullable = true)
+ |-- Port33960: boolean (nullable = true)
+ |-- Port33962: boolean (nullable = true)
+ |-- Port33970: boolean (nullable = true)
+ |-- Port33972: boolean (nullable = true)
+ |-- Port33968: boolean (nullable = true)
+ |-- Port50401: boolean (nullable = true)
+ |-- Port34222: boolean (nullable = true)
+ |-- Port34230: boolean (nullable = true)
+ |-- Port33966: boolean (nullable = true)
+ |-- Port33974: boolean (nullable = true)
+ |-- Port445: boolean (nullable = true)
+ |-- Port0: boolean (nullable = true)
+ |-- Port22: boolean (nullable = true)
+ |-- Port8291: boolean (nullable = true)
+ |-- Port8728: boolean (nullable = true)
+ |-- Port1433: boolean (nullable = true)
+ |-- Port8000: boolean (nullable = true)
+ |-- Port8081: boolean (nullable = true)
+ |-- Port5353: boolean (nullable = true)
+ |-- Port2004: boolean (nullable = true)
+ |-- Port11211: boolean (nullable = true)
+ |-- Port6881: boolean (nullable = true)
+ |-- Port8082: boolean (nullable = true)
+ |-- Port443: boolean (nullable = true)
+ |-- Port4000: boolean (nullable = true)
+ |-- Port5060: boolean (nullable = true)
+ |-- Port8083: boolean (nullable = true)
+ |-- Port8088: boolean (nullable = true)
+ |-- Port6379: boolean (nullable = true)
+ |-- Port30301: boolean (nullable = true)
+ |-- Port7001: boolean (nullable = true)
+ |-- Port9527: boolean (nullable = true)
+ |-- Port7002: boolean (nullable = true)
+ |-- Port9200: boolean (nullable = true)
+ |-- Port1027: boolean (nullable = true)
+ |-- Port3389: boolean (nullable = true)
+ |-- Port1900: boolean (nullable = true)
+ |-- Port21: boolean (nullable = true)
+ |-- Port5900: boolean (nullable = true)
+ |-- Port6380: boolean (nullable = true)
+ |-- Port88: boolean (nullable = true)
+ |-- Port389: boolean (nullable = true)
+ |-- Port8181: boolean (nullable = true)
+ |-- Port35: boolean (nullable = true)
+ |-- Port5000: boolean (nullable = true)
+ |-- Port5001: boolean (nullable = true)
+ |-- Port8008: boolean (nullable = true)
+ |-- Port4444: boolean (nullable = true)
+ |-- Port49153: boolean (nullable = true)
+ |-- Port137: boolean (nullable = true)
+ |-- Port7547: boolean (nullable = true)
+ |-- Port56880: boolean (nullable = true)
+ |-- Port5984: boolean (nullable = true)
+ |-- Port2222: boolean (nullable = true)
+ |-- Port8001: boolean (nullable = true)
+ |-- Port2480: boolean (nullable = true)
+ |-- Port8888: boolean (nullable = true)
+ |-- Port139: boolean (nullable = true)
+ |-- Port53: boolean (nullable = true)
+ |-- Port3544: boolean (nullable = true)
+ |-- Port873: boolean (nullable = true)
+ |-- Port50070: boolean (nullable = true)
+ |-- Port161: boolean (nullable = true)
+ |-- Port631: boolean (nullable = true)
+ |-- Port9000: boolean (nullable = true)
+ |-- Port4786: boolean (nullable = true)
+ |-- Port111: boolean (nullable = true)
+ |-- Port27017: boolean (nullable = true)
+ |-- Port1883: boolean (nullable = true)
+ |-- Port8090: boolean (nullable = true)
+ |-- Port554: boolean (nullable = true)
+ |-- Port3306: boolean (nullable = true)
+ |-- Port60001: boolean (nullable = true)
+ |-- Port82: boolean (nullable = true)
+ |-- Port83: boolean (nullable = true)
+ |-- Port3443: boolean (nullable = true)
+ |-- Port85: boolean (nullable = true)
+ |-- Port12866: boolean (nullable = true)
+ |-- Port3000: boolean (nullable = true)
+ |-- Port587: boolean (nullable = true)
+ |-- Port5901: boolean (nullable = true)
+ |-- Port143: boolean (nullable = true)
+ |-- Port50075: boolean (nullable = true)
+ |-- Port444: boolean (nullable = true)
+ |-- Port995: boolean (nullable = true)
+ |-- Port1521: boolean (nullable = true)
+ |-- Port465: boolean (nullable = true)
+ |-- Port993: boolean (nullable = true)
+ |-- Port110: boolean (nullable = true)
+ |-- Port10001: boolean (nullable = true)
+ |-- Port7777: boolean (nullable = true)
+ |-- Port548: boolean (nullable = true)
+
+25/04/06 19:28:53 WARN package: Truncated the string representation of a plan since it was too large. This behavior can be adjusted by setting 'spark.sql.debug.maxToStringFields'.
+Cluster  5 ; Mirai Ratio: 0.0012518849403932058 ; Cluster Size:  70294
+Cluster  13 ; Mirai Ratio: 0.003974412903787296 ; Cluster Size:  68941
+Cluster  37 ; Mirai Ratio: 0.2106412005457026 ; Cluster Size:  3665
+Cluster  42 ; Mirai Ratio: 0.03512544802867384 ; Cluster Size:  1395
+Cluster  71 ; Mirai Ratio: 0.9127024291497976 ; Cluster Size:  11856
+Cluster  78 ; Mirai Ratio: 0.03923766816143498 ; Cluster Size:  892
+Cluster  79 ; Mirai Ratio: 0.005265567765567766 ; Cluster Size:  8736
+Cluster  117 ; Mirai Ratio: 0.0035842293906810036 ; Cluster Size:  558
+Cluster  153 ; Mirai Ratio: 0.004914004914004914 ; Cluster Size:  814
+Cluster  159 ; Mirai Ratio: 0.07457983193277311 ; Cluster Size:  952
+Cluster  160 ; Mirai Ratio: 0.07082794307891332 ; Cluster Size:  6184
+Cluster  165 ; Mirai Ratio: 0.042321411356406054 ; Cluster Size:  10373
+SPARK_MASTER_HOST=p-bc-5088
+SPARK_MASTER_PORT=7077
+
+real	4m30.793s
+user	3m11.687s
+sys	0m4.886s
+srun: Job 36294753 step creation temporarily disabled, retrying (Requested nodes are busy)
