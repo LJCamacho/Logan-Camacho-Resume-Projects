@@ -1,0 +1,912 @@
+---
+title: "STAT 380 Final Project"
+authors: "Omer Kandemir, Rayan Abumansi, Logan Camacho"
+output: html_document
+date: "2025-04-25"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Front Matter
+
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(randomForest) #For Random Forest
+library(neuralnet) #For neural net
+library(rattle) #to display trees
+library(FNN) #For KNN classification
+
+
+setwd("C:/Users/Blungus/OneDrive - The Pennsylvania State University/2024-25/Spring Sem/Stat 380/Test CSV files/Final Project")
+
+CODGames_p1_380 <- read.csv("CODGames_p1_380.csv")
+CODGames_p2_380 <- read.csv("CODGames_p2_380.csv")
+CODMaps <- read.csv("CODMaps.csv")
+CODGameModes <- read.csv("CODGameModes.csv")
+
+```
+
+## Task 1
+
+To figure out which maps win the most votes in COD Games, I need to look at the voting data from both player datasets. I'll start by combining the datasets and cleaning up map names to fix any whitespace issues or misspelled names. The assignment mentions there might be problems with map names, so I'll compare them against the proper names in the CODMaps.csv file.
+
+First, I'll combine both player datasets to increase my sample size and get the full view of the voting patterns. Then I'll clean the map names by removing any trailing whitespace and correcting spelling problems using a series of nested ifelse statements.
+
+Next, I'll filter for games where voting actually occurred (where both Map1 and Map2 are populated). For these games, I need to determine which map won the vote and whether it won by getting more votes than the other option or by being Map1 in a tie situation. I'll create indicator variables to track these conditions.
+
+To calculate the win rates, I'll count how many times each map appeared as an option (either as Map1 or Map2) and how many times it was chosen (recorded in the Choice column). By dividing total wins by total appearances, I can determine the probability of a map winning when it appears as an option.
+
+First, let me check what the data looks like:
+
+```{r}
+head(CODGames_p1_380, 3)
+head(CODMaps, 5)
+```
+
+Now I'll join the datasets and look for name problems:
+
+```{r}
+CODGames_combined <- bind_rows(CODGames_p1_380, CODGames_p2_380)
+
+unique_map1 <- unique(CODGames_combined$Map1)
+unique_map2 <- unique(CODGames_combined$Map2)
+unique_choice <- unique(CODGames_combined$Choice)
+proper_maps <- CODMaps$Name
+
+head(unique_map1, 10)
+head(unique_map2, 10)
+head(unique_choice, 10)
+```
+
+I can see some map names have spaces at the end or typos. Let me clean them:
+
+```{r}
+CODGames_clean <- CODGames_combined %>%
+    mutate(
+        # 
+        Map1   = trimws(Map1),
+        Map2   = trimws(Map2),
+        Choice = trimws(Choice)
+    ) %>%
+    mutate(
+        Map1 = ifelse(Map1 == "", "",
+                           ifelse(Map1 == "Riad", "Raid",
+                           ifelse(Map1 == "Ruah", "Rush",
+                           ifelse(Map1 == "Collateral", "Collateral Strike", 
+                           ifelse(Map1 == "Collateral Striek", "Collateral Strike",
+                           ifelse(Map1 == "Collaterol Strike", "Collateral Strike",
+                           ifelse(Map1 == "Collaterel Strike", "Collateral Strike",
+                           ifelse(Map1 == "Miami Stirke", "Miami Strike",
+                           ifelse(Map1 == "Miami Sstrike", "Miami Strike",
+                           ifelse(Map1 == "Miami ", "Miami",
+                           ifelse(Map1 == "Jungle ", "Jungle",
+                           ifelse(Map1 == "Rush ", "Rush",
+                           ifelse(Map1 == "Zoo ", "Zoo",
+                           ifelse(Map1 == "Raid ", "Raid",
+                           ifelse(Map1 == "Drive-in", "Drive-In",
+                           ifelse(Map1 == "Deprogam", "Deprogram",
+                           ifelse(Map1 == "Amrada Strike", "Armada Strike",
+                           ifelse(Map1 == "Apocolypse", "Apocalypse",
+                           ifelse(Map1 == "APocalypse", "Apocalypse",
+                           ifelse(Map1 == "Deisel", "Diesel",
+                           ifelse(Map1 == "yamantau", "Yamantau",
+                           ifelse(Map1 == "Nuketown '84 Halloween", "Nuketown '84",
+                           ifelse(Map1 == "Armada", "Armada Strike",
+                           ifelse(Map1 == "Crossroads", "Crossroads Strike",
+                                  Map1)))))))))))))))))))))))),
+        Map2 = ifelse(Map2 == "", "",
+                           ifelse(Map2 == "Riad", "Raid",
+                           ifelse(Map2 == "Ruah", "Rush",
+                           ifelse(Map2 == "Collateral", "Collateral Strike",
+                           ifelse(Map2 == "Collateral Striek", "Collateral Strike",
+                           ifelse(Map2 == "Collaterol Strike", "Collateral Strike",
+                           ifelse(Map2 == "Collaterel Strike", "Collateral Strike",
+                           ifelse(Map2 == "Miami Stirke", "Miami Strike",
+                           ifelse(Map2 == "Miami Sstrike", "Miami Strike",
+                           ifelse(Map2 == "Miami ", "Miami",
+                           ifelse(Map2 == "Jungle ", "Jungle",
+                           ifelse(Map2 == "Rush ", "Rush",
+                           ifelse(Map2 == "Zoo ", "Zoo",
+                           ifelse(Map2 == "Raid ", "Raid",
+                           ifelse(Map2 == "Drive-in", "Drive-In",
+                           ifelse(Map2 == "Deprogam", "Deprogram",
+                           ifelse(Map2 == "Amrada Strike", "Armada Strike",
+                           ifelse(Map2 == "Apocolypse", "Apocalypse",
+                           ifelse(Map2 == "APocalypse", "Apocalypse",
+                           ifelse(Map2 == "Deisel", "Diesel",
+                           ifelse(Map2 == "yamantau", "Yamantau",
+                           ifelse(Map2 == "Nuketown '84 Halloween", "Nuketown '84",
+                           ifelse(Map2 == "Armada", "Armada Strike",
+                           ifelse(Map2 == "Crossroads", "Crossroads Strike",
+                                  Map2)))))))))))))))))))))))),
+        Choice = ifelse(Choice == "", "",
+                           ifelse(Choice == "Riad", "Raid",
+                           ifelse(Choice == "Ruah", "Rush",
+                           ifelse(Choice == "Collateral", "Collateral Strike",
+                           ifelse(Choice == "Collateral Striek", "Collateral Strike",
+                           ifelse(Choice == "Collaterol Strike", "Collateral Strike",
+                           ifelse(Choice == "Collaterel Strike", "Collateral Strike",
+                           ifelse(Choice == "Miami Stirke", "Miami Strike",
+                           ifelse(Choice == "Miami Sstrike", "Miami Strike",
+                           ifelse(Choice == "Miami ", "Miami",
+                           ifelse(Choice == "Jungle ", "Jungle",
+                           ifelse(Choice == "Rush ", "Rush",
+                           ifelse(Choice == "Zoo ", "Zoo",
+                           ifelse(Choice == "Raid ", "Raid",
+                           ifelse(Choice == "Drive-in", "Drive-In",
+                           ifelse(Choice == "Deprogam", "Deprogram",
+                           ifelse(Choice == "Amrada Strike", "Armada Strike",
+                           ifelse(Choice == "Apocolypse", "Apocalypse",
+                           ifelse(Choice == "APocalypse", "Apocalypse",
+                           ifelse(Choice == "Deisel", "Diesel",
+                           ifelse(Choice == "yamantau", "Yamantau",
+                           ifelse(Choice == "Nuketown '84 Halloween", "Nuketown '84",
+                           ifelse(Choice == "Armada", "Armada Strike",
+                           ifelse(Choice == "Crossroads", "Crossroads Strike",
+                                  Choice))))))))))))))))))))))))
+    )
+
+```
+
+Now I need to filter for games where voting happened:
+
+```{r}
+voting_games <- CODGames_clean %>%
+  filter(Map1 != "" & Map2 != "")
+
+nrow(voting_games)
+```
+
+For these games with voting, I'll mark which map won and how:
+
+```{r}
+voting_games <- CODGames_clean %>%
+  filter(Map1 != "" & Map2 != "")
+
+voting_games <- voting_games %>%
+  mutate(
+    Map1_won = (Choice == Map1),
+    Map2_won = (Choice == Map2),
+    
+    is_tie = (MapVote == "3 to 3" | 
+              MapVote == "1 to 1" | 
+              MapVote == "0 to 0" | 
+              MapVote == "2 to 2" | 
+              MapVote == "4 to 4" |
+              MapVote == "5 to 5" | 
+              MapVote == "6 to 6"),
+    
+    won_by_tie = (is_tie & Map1_won)
+  )
+```
+
+Now I'll count how many times each map shows up as an option:
+
+```{r}
+map_appearances <- bind_rows(
+  data_frame(map = voting_games$Map1),
+  data_frame(map = voting_games$Map2)
+) %>%
+  group_by(map) %>%
+  summarize(appearances = n())
+```
+
+Then count wins for each map:
+
+```{r}
+map1_wins <- voting_games %>%
+  filter(Map1_won) %>%
+  group_by(Map1) %>%
+  summarize(
+    wins = n(),
+    tie_wins = sum(won_by_tie),
+    vote_wins = wins - tie_wins
+  ) %>%
+  rename(map = Map1)
+
+map2_wins <- voting_games %>%
+  filter(Map2_won) %>%
+  group_by(Map2) %>%
+  summarize(
+    wins = n(),
+    tie_wins = 0,
+    vote_wins = wins
+  ) %>%
+  rename(map = Map2)
+
+all_wins <- bind_rows(map1_wins, map2_wins)
+
+map_wins <- all_wins %>%
+  group_by(map) %>%
+  summarize(
+    total_wins = sum(wins),
+    total_tie_wins = sum(tie_wins),
+    total_vote_wins = sum(vote_wins)
+  )
+```
+
+Now I'll calculate the win rates:
+
+```{r}
+map_stats <- map_appearances %>%
+  left_join(map_wins, by = "map") %>%
+  mutate(
+    total_wins = ifelse(is.na(total_wins), 0, total_wins),
+    total_tie_wins = ifelse(is.na(total_tie_wins), 0, total_tie_wins),
+    total_vote_wins = ifelse(is.na(total_vote_wins), 0, total_vote_wins),
+    win_rate = total_wins / appearances
+  ) %>%
+  arrange(desc(win_rate))
+
+head(map_stats, 10)
+```
+
+Let me make a chart to see the win rates:
+
+```{r}
+map_stats_filtered <- map_stats %>%
+  filter(appearances >= 10)
+
+ggplot(map_stats_filtered, aes(x = reorder(map, -win_rate), y = win_rate * 100)) +
+  geom_bar(stat = "identity", fill = "red") +
+  labs(
+    title = "Map Win Rates When Available as an Option",
+    x = "Map",
+    y = "Win Rate (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+I chose a simple bar chart here because it's the clearest way to show the win rates across different maps. A bar chart makes it easy to compare values across categories, which is exactly what we need to see which maps win more often than others.
+
+Let's also create a chart that shows both vote wins and tie wins:
+
+```{r}
+ggplot(map_stats_filtered, aes(x = reorder(map, -win_rate), y = win_rate * 100)) +
+  geom_bar(aes(y = total_vote_wins / appearances * 100), stat = "identity", fill = "red") +
+  geom_bar(aes(y = total_tie_wins / appearances * 100), stat = "identity", fill = "blue") +
+  labs(
+    title = "Map Win Rates by Win Type",
+    x = "Map",
+    y = "Win Rate (%)",
+    caption = "Dark blue = wins by vote, Light blue = wins by tie"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+I'll make a table of the results (because I like to see numbers more than bars):
+
+```{r}
+win_rate_table <- map_stats_filtered %>%
+  select(map, appearances, win_rate) %>%
+  mutate(win_percentage = paste0(round(win_rate * 100, 1), "%")) %>%
+  arrange(desc(win_rate))
+
+win_rate_table
+```
+
+I also want to see how maps win by votes vs ties:
+
+```{r}
+win_breakdown <- map_stats_filtered %>%
+  mutate(
+    vote_win_pct = total_vote_wins / appearances * 100,
+    tie_win_pct = total_tie_wins / appearances * 100
+  ) %>%
+  select(map, appearances, vote_win_pct, tie_win_pct, win_rate) %>%
+  arrange(desc(win_rate))
+
+win_breakdown
+```
+
+Based on my analysis, Nuketown '84 is the most popular map with an 82.5% win rate. Crossroads Strike (77.6%) and Raid (75%) are also very popular. Maps like Miami, Echelon, and Deprogram have win rates under 20%, showing that players really don't like these maps. This means that players actively avoid these maps when given the choice. This big gap means that map design does indeed impact player enjoyment.
+
+I also want to see what maps are the most "polarizing":
+
+```{r}
+tie_percentage_ranking <- win_breakdown %>%
+  select(map, appearances, tie_win_pct) %>%
+  arrange(desc(tie_win_pct))
+
+tie_percentage_ranking
+
+ggplot(tie_percentage_ranking, aes(x = reorder(map, tie_win_pct), y = tie_win_pct)) +
+  geom_bar(stat = "identity", fill = "red") +
+  coord_flip() +
+  labs(
+    title = "Maps Ranked by Win-by-Tie Percentage",
+    subtitle = "Which maps win because they were Map1 in a tie situation",
+    x = "Map",
+    y = "Win by Tie Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1))
+```
+
+I also looked at maps that win through tie votes rather than outright majorities. When there's a tie vote, the Map1 option is automatically selected. My tie percentage analysis shows that Zoo has the highest tie win percentage at 14%, followed closely by WMD (13.3%) and Satellite (12.8%). Nuketown '84, despite being the most popular map overall, still wins 12.5% of its appearances through ties. The relatively high tie percentages means that player opinions can be divided sometimes, making the tie-breaking rule also an important factor in map selection.
+
+## Task 2
+
+For this task, I used Claude 3.7 Sonnet (April 2025 version) as my generative AI tool to help solve the same problem as in Task 1. I copy and pasted the entire assignment and uploaded the 4 CSV files and told it:
+
+"complete task 2
+
+i have given you the csvs you need to solve this problem
+
+the datasets have already been loaded as
+
+rm(list = ls()) library(tidyverse) CODGames_p1_380 \<- read.csv("C:/Users/faruk/Downloads/CODGames_p1_380.csv") CODGames_p2_380 \<- read.csv("C:/Users/faruk/Downloads/CODGames_p2_380.csv") CODMaps \<- read.csv("C:/Users/faruk/Downloads/CODMaps.csv") CODGameModes \<- read.csv("C:/Users/faruk/Downloads/CODGameModes.csv")"
+
+This way, by not looking at any of my previous code or course content, it was able to solve the problem by giving me the code below:
+
+```{r}
+library(tidyverse)
+library(stringr)
+
+combined_data <- bind_rows(
+  CODGames_p1_380 %>% mutate(Player = "Player 1"),
+  CODGames_p2_380 %>% mutate(Player = "Player 2")
+)
+
+correct_map_names <- CODMaps$Name
+
+standardize_map_name <- function(map_name) {
+  if (is.na(map_name) || map_name == "") {
+    return(NA)
+  }
+  
+  map_name <- str_trim(map_name)
+  
+  for (correct_name in correct_map_names) {
+    if (tolower(map_name) == tolower(correct_name)) {
+      return(correct_name)
+    }
+  }
+  
+  return(map_name)
+}
+
+cleaned_data <- combined_data %>%
+  mutate(
+    Map1_clean = sapply(Map1, standardize_map_name),
+    Map2_clean = sapply(Map2, standardize_map_name),
+    Choice_clean = sapply(Choice, standardize_map_name)
+  )
+
+tie_values <- c("3 to 3", "1 to 1", "0 to 0", "2 to 2", "4 to 4")
+
+is_tie_vote <- function(vote_str) {
+  if (is.na(vote_str) || vote_str == "") {
+    return(FALSE)
+  }
+  return(vote_str %in% tie_values)
+}
+
+cleaned_data <- cleaned_data %>%
+  mutate(is_tie = sapply(MapVote, is_tie_vote))
+
+extract_votes <- function(vote_str) {
+  if (is.na(vote_str) || vote_str == "") {
+    return(c(NA, NA))
+  }
+  
+  parts <- unlist(str_split(vote_str, " to "))
+  if (length(parts) == 2) {
+    map1_votes <- as.numeric(parts[1])
+    map2_votes <- as.numeric(parts[2])
+    return(c(map1_votes, map2_votes))
+  } else {
+    return(c(NA, NA))
+  }
+}
+
+vote_results <- t(sapply(cleaned_data$MapVote, extract_votes))
+cleaned_data$Map1_votes <- vote_results[,1]
+cleaned_data$Map2_votes <- vote_results[,2]
+
+cleaned_data <- cleaned_data %>%
+  mutate(
+    chosen_due_to_tie = is_tie & Choice_clean == Map1_clean,
+    Map1_won_by_votes = !is.na(Map1_votes) & !is.na(Map2_votes) & Map1_votes > Map2_votes,
+    Map2_won_by_votes = !is.na(Map1_votes) & !is.na(Map2_votes) & Map2_votes > Map1_votes,
+    chosen_by_votes = (Map1_won_by_votes & Choice_clean == Map1_clean) | 
+                      (Map2_won_by_votes & Choice_clean == Map2_clean)
+  )
+
+map_appearances <- bind_rows(
+  cleaned_data %>% 
+    filter(!is.na(Map1_clean)) %>% 
+    count(Map1_clean) %>% 
+    rename(map = Map1_clean, as_map1 = n),
+  
+  cleaned_data %>% 
+    filter(!is.na(Map2_clean)) %>% 
+    count(Map2_clean) %>% 
+    rename(map = Map2_clean, as_map2 = n)
+) %>%
+  group_by(map) %>%
+  summarize(
+    as_map1 = sum(as_map1, na.rm = TRUE),
+    as_map2 = sum(as_map2, na.rm = TRUE),
+    total_appearances = as_map1 + as_map2
+  )
+
+map1_wins <- cleaned_data %>%
+  filter(!is.na(Map1_clean), Choice_clean == Map1_clean) %>%
+  count(Map1_clean) %>%
+  rename(map = Map1_clean, map1_win_count = n)
+
+map2_wins <- cleaned_data %>%
+  filter(!is.na(Map2_clean), Choice_clean == Map2_clean) %>%
+  count(Map2_clean) %>%
+  rename(map = Map2_clean, map2_win_count = n)
+
+tie_wins <- cleaned_data %>%
+  filter(is_tie == TRUE & Choice_clean == Map1_clean) %>%
+  count(Map1_clean) %>%
+  rename(map = Map1_clean, tie_win_count = n)
+
+map_stats <- map_appearances %>%
+  left_join(map1_wins, by = "map") %>%
+  left_join(map2_wins, by = "map") %>%
+  left_join(tie_wins, by = "map") %>%
+  mutate(
+    map1_win_count = replace_na(map1_win_count, 0),
+    map2_win_count = replace_na(map2_win_count, 0),
+    tie_win_count = replace_na(tie_win_count, 0),
+    total_wins = map1_win_count + map2_win_count,
+    win_probability = total_wins / total_appearances,
+    win_by_vote_probability = (total_wins - tie_win_count) / total_appearances,
+    win_by_tie_probability = tie_win_count / total_appearances
+  ) %>%
+  arrange(desc(win_probability))
+
+print(map_stats %>% 
+        select(map, total_appearances, total_wins, tie_win_count, win_probability) %>%
+        arrange(desc(win_probability)))
+
+ggplot(map_stats, aes(x = reorder(map, win_probability), y = win_probability)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_text(aes(label = sprintf("%.2f", win_probability)), 
+            hjust = -0.1, size = 3, color = "black") +
+  coord_flip() +
+  labs(
+    title = "Map Win Probability When Available as an Option",
+    subtitle = "Probability of a map being chosen when it appears as Map1 or Map2",
+    x = "Map",
+    y = "Win Probability"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    axis.text.y = element_text(size = 8)
+  )
+
+map_stats_long <- map_stats %>%
+  select(map, win_by_vote_probability, win_by_tie_probability) %>%
+  pivot_longer(
+    cols = c(win_by_vote_probability, win_by_tie_probability),
+    names_to = "win_type",
+    values_to = "probability"
+  ) %>%
+  mutate(win_type = if_else(win_type == "win_by_vote_probability", "Won by Vote", "Won by Tie"))
+
+ggplot(map_stats_long, aes(x = reorder(map, probability, sum), y = probability, fill = win_type)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(
+    title = "Map Win Probability Breakdown",
+    subtitle = "Probability of winning by vote vs. winning by tie",
+    x = "Map",
+    y = "Probability",
+    fill = "Win Type"
+  ) +
+  theme_minimal() +
+  scale_fill_manual(values = c("Won by Vote" = "steelblue", "Won by Tie" = "orange"))
+```
+
+There were a lot of differences between Task 1 and 2:
+
+First, we cleaned the data differently. My implementation in Task 1 used ifelse statements to manually correct each misspelled map name, addressing them case by case. Claude took a smarter approach by creating a standardize_map_name() function that used string trimming and comparison with a reference list of correct map names to find matches.
+
+Second, we processed the data differently. My approach in Task 1 involved creating separate dataframes for map1_wins and map2_wins then combining them, while Claude tracked everything in a more unified approach using left_join operations. Claude's code also includes an extract_votes() function to parse the vote counts from the MapVote string, which my solution didn't implement. Instead, I relied on simple logical tests to determine ties and winners.
+
+Third, our visualizations are different. I created a vertical bar chart showing win rates and another chart breaking down vote wins versus tie wins. Claude made a horizontal bar chart with percentages labeled on each bar and a stacked bar chart showing the win types.
+
+Both approaches found the same top maps like Nuketown '84 (although technically Claude did not combine Nuketown 84' Halloween into Nuketown 84' which means that my discrepancy handling for the map names was more encompassing than Claude's), Crossroads Strike, and Raid as the most popular maps. The AI solution produced a similar analysis but with smarter code in the sense that it is not "hard-coded". My approach focused on using the core functions we learned in class like filter(), mutate(), and summarize(), while Claude took a different approach.
+
+Claude's solution is smarter and would be more maintainable in the long run, especially if the dataset were to grow. However, my solution follows what we learned in STAT 380 more closely and may be easier to understand for someone just learning these techniques.
+
+## Task 3: Inference
+
+### Combine the Data
+
+Before analyzing, I will first combine the 2 datasets for player 1 and player 2 to one dataset.
+
+```{r}
+# view to confirm
+head(CODGames_clean)
+```
+
+### Cleaning GameType Column
+
+Now, I will clean the (GameType) column
+
+```{r}
+CODGames_clean <- CODGames_clean %>%
+  mutate(GameType = ifelse(GameType %in% c("HC - TDM", "TDM"), "TDM", GameType),
+         GameType = ifelse(GameType %in% c("HC - Hardpoint", "Hardpoint"), "Hardpoint", GameType),
+         GameType = ifelse(GameType %in% c("HC - Kill Confirmed", "Kill Confirmed"), "Kill Confirmed", GameType),
+         GameType = ifelse(GameType %in% c("HC - Domination", "Domination"), "Domination", GameType))
+
+# view unique values to confirm
+unique(CODGames_clean$GameType)
+```
+
+Confirm all HC versions have been correctly merged into their normal versions.
+
+### EDA
+
+Now I will do Exploratory Data Analysis (EDA): I will calculate the mean and median TotalXP and Score for each GameType.
+
+```{r}
+# summary statistics
+CODGames_clean %>%
+  group_by(GameType) %>%
+  summarize(
+    Mean_TotalXP = mean(TotalXP, na.rm = TRUE),
+    Median_TotalXP = median(TotalXP, na.rm = TRUE),
+    Mean_Score = mean(Score, na.rm = TRUE),
+    Median_Score = median(Score, na.rm = TRUE),
+    n = n()
+  )
+```
+
+Summary statistics: 1- Domination has the highest Mean and Median TotalXP. 2- Kill Confirmed has the lowest TotalXP. 3- Hardpoint and TDM are close, but Hardpoint is higher. 4- There are more observations for TDM and Hardpoint than for Domination or Kill Confirmed.
+
+This suggests that (GameType) likely affects TotalXP, even after accounting for Score to build!
+
+Now I will create 2 histograms for TotalXP and Score, it helps visualize the distribution.
+
+```{r}
+# Histogram of TotalXP
+ggplot(CODGames_clean, aes(x = TotalXP)) +
+  geom_histogram(binwidth = 100, fill = "gold") +
+  labs(title = "TotalXP", x = "TotalXP", y = "Count")
+
+# Histogram of Score
+ggplot(CODGames_clean, aes(x = Score)) +
+  geom_histogram(binwidth = 100, fill = "lightgreen", color = "black") +
+  labs(title = "Score", x = "Score", y = "Count")
+```
+
+The histograms show that both TotalXP and Score are right-skewed, it means that there are some games with extremely high values.
+
+To compare TotalXP distributions across GameTypes, and see differences before modeling. I will create a boxplot of TotalXP by GameType
+
+```{r}
+# Boxplot of TotalXP by GameType
+ggplot(CODGames_clean, aes(x = GameType, y = TotalXP, fill = GameType)) +
+  geom_boxplot() +
+  labs(title = "TotalXP by GameType", x = "Game Type", y = "TotalXP")
+```
+
+The boxplot shows that Domination and Hardpoint produce higher TotalXP compared to TDM and Kill Confirmed. Domination has highest median TotalXP, and Kill Confirmed has the lowest median.
+
+### Build the Model
+
+Now that we understand the data and gathered all these insights, I will build a multiple linear regression model predicting TotalXP based on Score and GameType:
+
+```{r}
+
+# multiple linear regression model
+model <- lm(TotalXP ~ Score + GameType, data = CODGames_clean)
+
+summary(model)
+```
+
+Intercept (9072.59): When Score = 0 and GameType is Domination, the predicted TotalXP is 9072.6.
+
+The regression model shows that Score is a very strong predictor of TotalXP, with each additional point of Score associated with an increase of 2.71 in TotalXP. The type of game also influence TotalXP, playing Kill Confirmed or TDM is associated with a decrease in TotalXP compared to Domination, Hardpoint is not that different from Domination. The model explains 33% of the variation in TotalXP, showing that Score and GameType are important factors but not the only ones affecting TotalXP.
+
+### Answer the Research Question
+
+Finally and gathering all information we got, to answer the research question:
+
+**How does the GameType affect TotalXP after accounting for Score?**
+
+After accounting for Score, GameType still makes a difference in TotalXP, but not a huge one. Domination and Hardpoint lead to similar XP amounts, but Kill Confirmed and TDM have lower XP on average. The differences are not that strong statistically, but they’re noticeable. Score remains the primary and strongest factor influencing TotalXP, and GameType just adds a smaller extra effect.
+
+## Task 4: Prediction
+
+In this section, I am tasked with comparing a variety of classification methods and models to answer my own research question:
+
+### Can we predict if the player had a positive or negative Elimination-to-Death ratio using 'WeaponClass', map choice, 'Score', 'Damage', winning/losing the match, and 'GameType'?
+
+Call of Duty: Black Ops Cold War is an easy-to-learn yet hard to master game, where there is not a single defined way in order to succeed personally and as a team in an online setting. Most players have found ways to succeed using the most optimal weapons available, while others handicap themselves to make winning a more enjoyable challenge to overcome; some maps, modes, and weapons are overall better options universally than other weapons, so here I want to see if it is possible to associate different game modes, some player metrics, map selection, and type of weapon used with this overarching tell of player skill.
+
+To provide more depth on the weapon class feature we will use for this specific research question:
+
+-   Assault Rifles (AR), made for mid-range combat
+
+-   Submachine Guns (SMG), made for close-quarters combat
+
+-   Tactical Rifles (TR), specialized assault rifles with varying uses
+
+-   Light Machine Guns (LMG), heavy, high-capacity weapons for consistent firing
+
+-   Sniper Rifles (SR), long-range specialized rifles
+
+-   Secondary, pistols or miscellaneous "special" weapons, such as rocket launchers
+
+To start, I will create a new dataframe that adds columns for weapon classes, team performance(where ties are treated as losses), and the elimination-to-death ratio metric. Throughout this, I will also clean up previously unaltered weapon names and create factors necessary for each of my models. For the sake of simplicity, I will consider values of EDratio greater than or equal to 1 to be positive by definition; this implies that the player eliminated 1 or more enemies every time they died themselves. We will call this variable 'Skill' which will be represented as "positive" (1) or "negative" (0) within data frames.
+
+```{r}
+# Fix Primary Weapon column, in addition to removing empty cells
+task4_cleaned <- CODGames_clean %>%
+  mutate(PrimaryWeapon   = trimws(PrimaryWeapon),
+    PrimaryWeapon = ifelse(PrimaryWeapon == "Milano", "Milano 821",ifelse(PrimaryWeapon == "Pellington", "Pelington 703", PrimaryWeapon)))%>%
+  filter(Result != "" & Choice != "" & Eliminations !="")
+
+# create Outcome and Win column
+task4_cleaned <- task4_cleaned %>%
+  separate(Result,into = c("TeamScore", "OpponentScore"), sep = "-", convert = TRUE)%>%
+  mutate(Outcome = case_when(
+    TeamScore > OpponentScore ~ "Win",
+    TeamScore < OpponentScore ~ "Loss",
+    TRUE ~ "Tie"
+  ), Win =ifelse(Outcome == "Win", 1, 0))
+
+# create WeaponClass, EDratio, and Skill to show positive or negative EDratio
+task4_cleaned <- task4_cleaned %>%
+  mutate(WeaponClass = case_when(
+    PrimaryWeapon %in% c("AK-47", "FFAR 1", "Krig 6", "QBZ-83", "Groza", "FARA-83", "XM4") ~ "AR",
+    PrimaryWeapon %in% c("MP5", "Milano 821", "KSP 45", "LC-10") ~ "SMG",
+    PrimaryWeapon %in% c("Type 63", "M16", "AUG", "DMR 14") ~ "TR",
+    PrimaryWeapon %in% c("MG 82", "RPD", "M60") ~ "LMG",
+    PrimaryWeapon %in% c("Pelington 703") ~ "SR",
+    PrimaryWeapon %in% c("Magnum", "ShadowHunter") ~ "Secondary"),
+    EDratio = Eliminations/Deaths,
+    Skill = ifelse(EDratio >= 1, "Positive","Negative"))
+# create factors for map and game type
+task4_cleaned <- task4_cleaned %>%
+  mutate(WeaponClass = as.factor(WeaponClass),
+         Choice = as.factor(Choice),
+         GameType = as.factor(GameType),
+         Skill = as.factor(Skill))
+
+# convert to numeric in order to use for KNN class and neural network
+numeric_task4 <- task4_cleaned %>%
+  mutate(across(where(is.factor),~ as.numeric(as.factor(.)))) 
+
+# Show indicator and head of dataframe
+table(numeric_task4$Skill)
+head(task4_cleaned)
+```
+
+With our indicator for positive and negative Elimination to death ratio set, along with knowing that we have a good proportion of data split between them, we are ready to begin making our classification models. The only baseline similarities between all classification models will be that the same seed (942) and training split (80/20) will be used. If a model requires numerical factors, it will use the numeric_task4 dataframe, and task4_cleaned in all other cases.
+
+To start, we will use the numerical factor dataset with an 80/20 training/validation split using a seed of 942 and a for loop for best K from 1 to 75 to implement KNN classification. KNN classification aims to "cluster" data points together based on features they share in common, to predict an overarching group title. Only 'Score' and 'Damage' are scaled because all other variables included are categorical factors.
+
+### KNN for classification
+
+```{r}
+# set maxK
+maxK <- 75
+
+#Scale Score and damage since categorical variables do not need scaling
+xvars <- c("Score", "Damage")
+numeric_task4[ , xvars] <- scale(numeric_task4[ , xvars], center = TRUE, scale = TRUE)
+
+# 80/20 Train/Validation split
+set.seed(942)
+trainInd <- sample(1:nrow(numeric_task4), floor(0.80*nrow(numeric_task4)))
+set.seed(NULL)
+
+Train <- numeric_task4[trainInd, ]
+Validation <- numeric_task4[-trainInd, ]
+
+# Initialize vector to store accuracies for each k
+accuracies <- numeric(maxK)
+
+#Build kNN classification model
+
+for(i in 1:maxK){
+pred <- knn(train = Train[ , xvars, drop = FALSE],
+               test = Validation[ , xvars, drop = FALSE],
+               cl = Train$Skill,
+               k = i)
+ # Calculate accuracy
+  accuracies[i] <- mean(pred == Validation$Skill)
+}
+
+# Find the best k (highest accuracy)
+best_k <- which.max(accuracies)
+best_accuracy <- max(accuracies)
+
+# Output the best k and its corresponding accuracy
+cat("Best k:", best_k, "\n")
+cat("Best accuracy:", best_accuracy, "\n")
+
+predBest <- knn(train = Train[ , xvars, drop = FALSE],
+               test = Validation[ , xvars, drop = FALSE],
+               cl = Train$Skill,
+               k = best_k)
+
+
+#recreate factor names as they appear in task4_cleaned
+predicted <- factor(predBest, levels = c(2,1), labels = c("Positive", "Negative"))
+actual <- factor(Validation$Skill,levels = c(2,1), labels = c("Positive", "Negative"))
+
+#Confusion Matrix
+table(Predicted= predicted, Actual=actual)
+```
+
+When given input features of map choice, player score and damage, weapon class, team win condition, and gametype, we were able to predict the player's EDratio being positive or negative with 79.01% accuracy using the best value K of 17 nearest neighbors. We can conclude that our model is nearly desirable with this accuracy due to being right below 80%, or the generally accepted threshold for model accuracy.
+
+### Random Forest
+
+Next, we will make these predictions using Random Forest with 1000 trees, and mtry = 2 with the same features. Since this model uses many decision trees that sample features from the data and combine their predictions to reach its conclusion, we will not have to use numeric_task4 nor scale any variables before training the model.
+
+```{r}
+# 80/20 Train/Validation split
+set.seed(942)
+trainInd <- sample(1:nrow(task4_cleaned), floor(0.80*nrow(task4_cleaned)))
+set.seed(NULL)
+
+TrainRF <- task4_cleaned[trainInd, ]
+ValidationRF <- task4_cleaned[-trainInd, ]
+
+
+
+# use only xvars in randomForest
+
+set.seed(942)
+rfModel <- randomForest(Skill ~ WeaponClass+GameType+Score+Damage+Win+Choice,
+                        data = TrainRF,
+                        ntree = 1000, 
+                        mtry = 2,
+                        importance = TRUE)
+set.seed(NULL)
+
+
+#Obtain predicted probabilities
+predProbRF <- predict(rfModel, newdata = ValidationRF, type = "prob")
+
+#probabilities of first 6 matches players to be positive or negative
+head(predProbRF)
+
+#To create the confusion matrix, we need to determine which class (No or Yes) is more likely
+predPos <- predict(rfModel, newdata = ValidationRF, type = "response")
+table(predPos, ValidationRF$Skill)
+
+# create comparison DF for better interpretability
+comparisonRF <- ValidationRF %>%
+  mutate(Prediction = predPos) %>%
+  select(WeaponClass, GameType, FullPartial, Score, Damage, Win, Choice, EDratio, Skill, Prediction)
+
+head(comparisonRF, 10)
+```
+
+The predProbRF table on its own may not make much sense to a non-statistician, so I included a comparison data frame showcasing selected validation parameters and the actual vs. predicted outcome. We can get a glimpse at how games with clearly high/low EDratios were predicted to be positive, and conversely, the observation where the ratio is equal to one seems to be the only visible case in this sample where we receive a false negative from our predictions. This match in particular has a significantly lower score and damage even when compared to the others with a negative ratio, which can be tracked to the 'FullPartial' variable showing that the player was not present from start to finish in this match in particular.
+
+On top of that, we have to calculate the accuracy of our random forest model and showcase some variables of importance.
+
+```{r}
+#Calculate accuracy
+rfAccuracy <- mean(predPos == ValidationRF$Skill)
+
+#Display accuracy
+rfAccuracy
+#Plot the Variable Importance Values
+varImpPlot(rfModel, n.var = 6)
+```
+
+After assessing the random forest model, we achieve a slightly better overall accuracy when compared to the KNN classification model at its best, with an 81.48% prediction accuracy. When considering the ability of the model to generalize new data, the 3 most important variables were 'Score', 'Damage', and 'GameType'; on the contrary, 'GameType' is replaced by map choice when considering the ability to predict new models. Since we have crossed the 80% threshold, we can conclude that this model provided us with desirable results pertaining to my research question from before.
+
+### Simple Neural Network
+
+For the model not discussed in class, I have decided to implement a simple neural network for our binary classification problem; this was my greatest challenge so far. Neural networks are a branch of machine learning that gets its namesake from biological neurons in the human brain, in the way how features (x-variables) pass through and "communicate" to the hidden layer(s) with a specified amount of neurons containing some raw input that finishes off in the last layer as the output, or in our case a prediction of whether the player had a positive or negative 'Skill'. In the most complex cases, NNs are used in image classification and speech recognition problems that are extremely dependent on computing power as you go deeper into the network; our problem only requires one hidden layer with 5 neurons, scaled 'Score' and 'Damage', and some batched-in modifiers that allow me to utilize the model for binary classification.
+
+Most of my difficulty was understanding how to process the data before training the model and later became a constant back-and-forth debugging process to understand why my predictions were vastly different. By the nature of this model, I was forced to One-Hot-Encode all categorical features used to predict Skill, which led to the visual plot being undecipherable and misaligning itself when compared to the inputs of the other models.
+
+```{r}
+#OHE of categoricals without the intercept
+dummies <- model.matrix(~ Choice + WeaponClass + GameType -1, data = task4_cleaned)
+
+# Combine numeric features with the desired y-variable
+nnTask4Df <- cbind(
+  dummies,
+  Score = task4_cleaned$Score,
+  Damage = task4_cleaned$Damage,
+  Win = task4_cleaned$Win,
+  Skill = task4_cleaned$Skill
+)
+# convert to DF and clean spaces in map choice 
+nnTask4Df <- as.data.frame(nnTask4Df)
+colnames(nnTask4Df) <- make.names(colnames(nnTask4Df))
+
+#Scale Score and Damage
+scaledXvars <- c("Score", "Damage")
+nnTask4Df[ , scaledXvars] <- scale(nnTask4Df[ , scaledXvars], center = TRUE, scale = TRUE)
+
+  
+# 80/20 Train/Validation split
+set.seed(942)
+trainInd <- sample(1:nrow(nnTask4Df), floor(0.80*nrow(nnTask4Df)))
+set.seed(NULL)
+
+nnTask4Df$Skill <- ifelse(task4_cleaned$Skill == "Positive", 1, 0)
+
+Train <- nnTask4Df[trainInd, ]
+Validation <- nnTask4Df[-trainInd, ]
+
+#formula 
+
+predictors <- setdiff(colnames(Train), "Skill")
+formula <- as.formula(paste("Skill ~", paste(predictors, collapse = " + ")))
+
+# train the neural net with 5 neurons in 1 hidden layer
+set.seed(942)
+
+nnModel <- neuralnet(formula,
+                   data = Train,
+                   hidden = 5,
+                   linear.output = FALSE,
+                   act.fct = "logistic",
+                   likelihood = TRUE)
+set.seed(NULL)
+
+# plot results
+plot(nnModel,rep = "best")
+```
+
+Once again, this plot is here to give a general idea of how the concept of neural networks function. Since each map name and weapon class was split into their own unique variables, it led to the training data containing 40 columns worth of features, condensed into 5 neurons that calculate the weighted sum of each individual input feature, as shown:
+
+$$
+\text{net}_i = \sum w_i x_{ij} - b_i
+$$
+
+Then, it applies a bias to this sum that gets passed to a nonlinear activation function that outputs a nonlinear result, which determines the next neuron the input travels to in the following layer.
+
+$$
+o_i = \frac{1}{1 + e^{-\text{net}_i}}
+$$
+
+Our neural network model only has a singular hidden layer and 1 possible binary output, so the 40 inputs get dispersed between all 5 neurons and outputted to predict our 'Skill' variable. These results can be placed in a confusion matrix like previous models and have an extractable accuracy value we can use to discuss model performance.
+
+```{r}
+nnPred <- predict(nnModel, Validation[, predictors])
+
+# Convert probabilities to class labels
+pred_labels <- ifelse(nnPred > 0.5, 1, 0)
+true_labels <- Validation$Skill
+
+# Evaluate performance
+conf_matrix <- table(True = true_labels, Predicted = pred_labels)
+accuracy <- mean(pred_labels == true_labels)
+
+
+conf_matrix
+accuracy
+```
+
+The neural network leaves us with an accuracy of 72.8395%, which is not desirable out of training a model, but not completely unsalvageable. This may have occurred due to the increase of indicators flooding the weighted sum calculations throughout the hidden layer of neurons, so granted that having an accuracy over 50% means we are closer to a desirable model than otherwise. During debugging, values like 0 and 19.23% would show up rather often, so despite cleaning up that work from beforehand, the model does not perform on the same level as KNN classification with 17 NN or random forest with 1000 trees. This does not mean that the neural network is an inherently inferior model compared to the latter two, but rather it leaves much more to be desired.
+
+### Most effective model
+
+```{r}
+tibble(
+  `17-NN Accuracy` = paste0(round(best_accuracy * 100, 2), "%"),
+  `Random Forest Accuracy` = paste0(round(rfAccuracy * 100, 2), "%"),
+  `Neural Net Accuracy` = paste0(round(accuracy * 100, 2), "%")
+) %>%
+  print()
+```
+
+When given the research question "Can we predict if the player had a positive or negative Elim to Death ratio using 'WeaponClass', map choice, 'Score', 'Damage', winning/losing the match, and 'GameType'?", the model with the best prediction accuracy was random forest with 81.48%, followed by KNN classification at k=17 with 79.01%, and lastly the simple neural net with 72.84% prediction accuracy.
