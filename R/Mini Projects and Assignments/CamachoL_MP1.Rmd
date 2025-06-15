@@ -1,0 +1,216 @@
+---
+title: "STAT380 Mini Project 1"
+author: "Logan Camacho"
+date: "2025-03-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Front Matter and read the dataset into R
+
+```{r}
+
+#Add libraries as needed
+library(tidyverse)
+library("readxl")
+
+
+#Read in xlsx file
+ColdWarGames <- read_excel("C:/Users/Blungus/OneDrive - The Pennsylvania State University/2024-25/Spring Sem/Stat 380/Test CSV files/CODGames2_mp.xlsx")
+```
+
+## 2. Univariate Data Exploration
+
+The dataset I am exploring contains various player-information from online matches of Call of Duty: Cold War, which was a first-person shooter (FPS) game that initially released on November 13, 2020. This installment within the franchise is one that I have spent more time playing than most others in recent years, meaning that the variables are familiar to me and allow me to provide deeper insights on possible inferences to make when interpreting the dataset. Before performing intensive data-wrangling, I will explore five variables within the dataset in order to get necessary context to answer future questions I may have: **Choice**, **Eliminations**, **PrimaryWeapon**, **Damage**, and **ObjectiveKills**.
+
+```{r}
+head(ColdWarGames, 5)
+```
+
+### Map Choice
+
+As inferred by the first two variables, **Map1** and **Map2**, along with the **MapVote** variable, **Choice** determines what map that the player will be on for the subsequent match ahead of them. For the unfamiliar, 'maps' are the different playing fields that players will combat each other, usually representing real-world locations based on the era the game is set to take place. I recognized the names of maps to be from Call of Duty: Cold War, which is set in the early 1980s. Maps determine how the majority of matches play out, as some can be reused 'retro' maps from previous installments, or have outlandish layouts that make certain weapons useless in play as opposed to others, leading to fan debates on what makes a 'good' or 'bad' map. We can infer this by making a frequency table of all the maps chosen for play, dictated by the **Choice** varible.
+
+```{r}
+ChoiceVar <- ColdWarGames[!is.na(ColdWarGames$Choice),]
+ggplot(ChoiceVar, aes(x= fct_infreq(Choice))) +
+  geom_bar(fill = "red", color = "black", width = .7)+
+  scale_y_continuous(breaks = seq(0, 15, by = 2)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  labs(x = "Map Choice",
+       y = "Number of Selections")
+  
+MapCount <- length(unique(ChoiceVar$Choice))
+MapCount
+```
+
+**Choice** is categorical due to being a name of a location in-game, and only had a single NA within all observations measuring this variable. There are 25 different maps that could be played on, with each map not being played more than 15 times. The 6 most played maps throughout the player's data collection were *Crossroads Strike*, *Diesel*, and *Rush* each with 15 selections,followed by *Collateral Strike*, *Raid*, and *Standoff* each with 12 selections each. Out of these 6 maps, the only one that came out on release day was *Crossroads Strike*. Additionally, *Rush*, *Raid*, and *Standoff* were added as 'retro' maps from a previous Call of Duty release. Although each map has a vastly different setting compared to one another, they all have one thing in common: many corridors suitable for close-range engagements on top of long sightlines elsewhere, allowing all playstyles to be viable, leading them to gain popularity within the pre-match votes as seen from the data.
+
+### Eliminations
+
+The eliminations variable is only present in newer installments of Call of Duty (COD), and represents the amount of opponents that were killed shortly after being injured by the player. Across FPS games and all COD, the most basic player-skill metric measurable was the kill to death (K/D) ratio, yet the main scoreboard metric in Cold War (CW) will show up as eliminations. Both K/D and Elimination to death (Elim/D) ratios are present, however in this game eliminations increment when previous installments would count them as 'assists'. Due to kills not being tracked, we will not be able to uncover whether the player dealt the finishing blow to each opponent, or only did a fraction of damage before they died to other teammates.
+
+```{r}
+summary(ColdWarGames$Eliminations)
+```
+
+As according to the summary statistics, the player had an average of 15 eliminations per game, maxing out at 39 in a single game and a low of only 2 in a very poor game. On average, this player did a decent job at combating opponents with teammates.
+
+```{r}
+ggplot(ColdWarGames, aes(x= Eliminations))+
+  geom_bar(fill = "purple", color = "black", alpha=.7, width = .7)+
+  scale_x_continuous(breaks = seq(0, max(ColdWarGames$Eliminations), by = 4)) +  
+  scale_y_continuous(breaks = seq(0, max(table(ColdWarGames$Eliminations)), by = 2)) +
+  labs(x = "Number of Eliminations",
+       y = "Matches played")
+```
+
+The most frequent number of eliminations to be achieved by the player seems to be 14 per match with 18 matches with this value, and the matches with eliminations above 30 can be treated as outliers in standard statistical analysis, due to the low frequency of occurences compared to the rest of the data.
+
+### Primary Weapon
+
+The primary weapon explains itself, being the main weapon the player uses to earn eliminations in their matches, and can be split into categories as such:
+
+-   Assault Rifles (AR), made for mid-range combat
+-   Submachine Guns (SMG), made for close-quarters combat
+-   Tactical Rifles (TR), specialized assualt rifles with varying uses
+-   Light Machine Guns (LMG), heavy, high capacity weapons for consistent firing
+-   Sniper Rifles (SR), long range specialized rifles
+
+Each weapon has it's designated purpose, but ultimately can be used wherever and whenever the player chooses, as long as it works for them and allows them to have fun.
+
+```{r}
+
+
+ColdWarGames <- ColdWarGames %>%
+  mutate(WeaponCategory = case_when(
+    PrimaryWeapon %in% c("AK-47", "FFAR 1", "Krig 6", "QBZ-83") ~ "AR",
+    PrimaryWeapon %in% c("MP5") ~ "SMG",
+    PrimaryWeapon %in% c("Type 63", "M16") ~ "TR",
+    PrimaryWeapon %in% c("MG 82") ~ "LMG",
+    PrimaryWeapon %in% c("Pelington 703") ~ "SR",))
+
+
+ggplot(ColdWarGames, aes(x= fct_infreq(PrimaryWeapon), fill = WeaponCategory)) +
+  geom_bar(color = "black")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  labs(x = "Primary Weapon Choice",
+       y = "Number of Selections")+
+  guides(fill = guide_legend(title = "Weapon Category"))
+WeaponCount <- length(unique(ColdWarGames$PrimaryWeapon))
+WeaponCount
+```
+
+The most prominent weapon category from the data set are Assault Rifles, due to having the most weapon options in game and being very good all-rounder weapons that allow any player to perform well with. The M16 and MP5 are known to be some of the best weapons in the game, and this data proves that with the overwhelmingly high number of selections for each one. As these games get played out and players begin to understand what stands out as a 'good' weapon, the standouts are ones that perform well in the most common situations the player might find themselves in. The sole LMG was the least used, due to it's slow movement speed and handling stats, as well as being generally outperformed in all categories (outside of ammo reserves) by other weapons.
+
+### Damage
+
+As self-explanatory as the damage variable may be, it holds some intricacies when considering the context of the data. Damage represents all damage the player does to opponents, however, you might notice that all of the *gameType* observations have an HC abbreviation next to the game type. This means that the mode is played in the Hardcore playlist, which changes rules that more experienced players are driven to. Many elements of the Heads Up Display (HUD) that provide information for the player are hidden, players have a much smaller health pool (takes less damage to die), there are no kill cams to let the player see how they died, and the most important change is the enabling of 'friendly fire'. This allows the player to damage and kill their own teammates, accidentally or on purpose. Once a certain threshold is reached, the damage gets reflected to the player, and once this final threshold is reached, it will eventually the game will forcibly kick the player from the match.
+
+```{r}
+summary(ColdWarGames$Damage)
+```
+
+At first glance I noticed that the damage values were very small when compared to those of my own from similar game modes played, but realized that I played my games in the 'core' playlist. This means that my damage was done to players with 150 health, as opposed to the player with this dataset, who only has 35 health. On average, the player dealt 415 damage to other players in the match, which is converted to be a little under 12 kills by a raw estimate. The worst performing (based on damage) game the player had was 56 damage dealt; barely a kill and a half. Due to the elimination system in place, we cannot be conclusive about where the damage was dealt and how significant it was, outside of the correlation that it increase as eliminations increase.
+
+```{r}
+ggplot(ColdWarGames, aes(x= Damage))+
+  geom_histogram(bins= 50, fill ="cyan", color = "black" )+
+  scale_x_continuous(breaks = seq(0, max(ColdWarGames$Damage), by = 100)) +  
+  labs(x = "Damage dealt",
+       y = "Matches played")
+```
+
+The histogram gives us a glimpse at how frequent certain thresholds of damage are exceeded, for example the player dealt around 400 damage or less in over 100 matches, based on the median.
+
+### Objective Kills
+
+The variable Objective kills represents kills where the player is on an objective, such as defending a flag or zone, or killing the opposing player doing the same thing. For example, if our player sees an enemy on his flag, killing them would count as an objective kill. Some in game challenges track this metric, and encourages players to focus more on playing the objective to win as a team rather than rake up kills for personal gain.
+
+```{r}
+ObjectiveDF <- ColdWarGames %>%
+  filter(!is.na(ObjectiveKills))
+
+summary(ObjectiveDF$ObjectiveKills)
+nrow(ObjectiveDF) 
+```
+
+There are only 11 games played where the player had the goal to help their team win by securing objectives or defending objectives/zones, and in one of these games, the player had 15 objective kills at their highest. This implies that they focused a lot on preventing opposing forces from taking objectives as well as holding their own for the sake of the team.
+
+```{r}
+ggplot(ObjectiveDF, aes(x= ObjectiveKills))+
+  geom_bar(fill = "green", color = "black", alpha=.7, width = .7)+
+  scale_x_continuous(breaks = seq(0, max(ObjectiveDF$ObjectiveKills), by = 1)) +  
+  scale_y_continuous(breaks = seq(0, max(table(ObjectiveDF$ObjectiveKills)), by = 1)) +
+  labs(x = "Number of Objective Kills",
+       y = "Matches played")
+```
+
+The bar plot of objective kills by frequency per game shows that in 5 of the games, the player achieved 10 or more objective kills, while in the latter 6 games only scored 7 objective kills at most. Objective kills is a hard metric to visualize from this dataset, considering only 11 matches out of the 211 recorded observations tracked this stat, so any conclusions on the player would be unfair to make.
+
+## 3. Questions about the dataset
+
+1.  Was the player's data collected by hand, or was the dataset exported from Call of Duty: Cold War's files?
+2.  All of the player's matches were played in HC (Hardcore) mode, was there an ulterior motive for recording HC data as opposed to playing in "core" modes?
+3.  Since some matches were only partially played out, why was the team score at the time of the player joining not recorded (to give insight into how close the game was to being completed)?
+
+## 4. Answered Questions
+
+1.  Is the player's performance, as quantified by the amount of experience points gained (TotalXP variable) changing over time?
+
+```{r}
+ColdWarGames <- ColdWarGames %>%
+  mutate(
+    dateF= ymd(Date),
+    Month = month(dateF, label = TRUE, abbr = FALSE)
+  )
+
+ggplot(ColdWarGames, aes(x = Month, y = TotalXP, fill = Month)) +
+  geom_boxplot() +
+  scale_fill_hue()+
+  scale_y_continuous(breaks = seq(min(ColdWarGames$TotalXP)+65, max(ColdWarGames$TotalXP), by = 5000)) +
+  theme_classic()+
+  labs(title = "XP gained by month", x = "Month", y = "XP")
+
+
+```
+
+When we consider the player's total xp gained per month, we can conclude that their performance is not changing over time, as the Interquartile ranges for each month are nearly in line with each other; this means that across half of their games each month, the player's experience gain is very comparable. July is notable for having a slightly larger IQR and higher outliers than August or June; this can be explained by having more games played in addition to better performing days when a double-XP promotion is running.
+
+2.  Which weapon class does the player perform (highest points) the best with?
+
+In order to find out what weapon category/class the player scores the most points with, first I will organize the ColdWarGames dataframe by weapon class and summarize the average scores across all observations.
+
+```{r}
+bestClass <- ColdWarGames %>%
+  group_by(WeaponCategory) %>%
+  summarize(avgScore = mean(Score)) %>%
+  arrange(desc(avgScore))
+
+bestClass
+LMGrow<- sum(ColdWarGames$WeaponCategory== "LMG")
+LMGrow
+```
+
+As we can see from the summarization, we can conclude that on average the player performed best with assault rifles as compared to other weapons, and performed the worst on average with the sniper rifle. From previous data exploration, I discovered that 4 assault rifles were used throughout all observations, while sniper rifles, submachine guns, and light machine guns each only had 1 weapon each. Despite this, the LMG had the second highest average score across observations, while the SMG and SR had the second lowest and lowest respective average score. After a follow-up prompt, I discovered that there were only 2 games that the player had used an LMG for, thus providing an inaccurate conclusion to be made on LMG performance.
+
+```{r}
+fixedColdWarGames <- ColdWarGames %>%
+  filter(WeaponCategory != "LMG")
+  
+  
+ggplot(fixedColdWarGames, aes(x = WeaponCategory, y = Score, fill = WeaponCategory)) +
+  geom_boxplot() +
+  scale_y_continuous(breaks = seq(0, 8000,by = 750))+
+  scale_fill_hue()+
+  theme_classic()+
+  guides(fill = guide_legend(title = "Weapon Category")) +
+  labs(title = "Performance by Weapon Category", x = "Weapon Category", y = "Score")
+
+
+```
+
+I have decided to remove the LMG category for the sake of the box plot's readability and interpretation now knowing why it scored such a high average score. The results of our summary by category can be seen through the plots, as the IQR for the AR category starts and ends at a higher score than the rest of weapon classes shown. Sniper rifles have a low and long IQR for the player, along with the lowest average score due to the playstyle required by that class in order to perform well (slow, methodical, 1 shot per kill means one chance to succeed, etc.).

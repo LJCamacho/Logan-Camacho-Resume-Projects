@@ -1,0 +1,261 @@
+---
+title: "Mini Project 3"
+authors: "Omer Kandemir, Rayan Abumansi, Logan Camacho"
+output: html_document
+date: "2025-04-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Front Matter
+
+```{r}
+remove(list = ls())
+
+library(tidyverse)
+library(readxl)
+library(glmnet)  
+library(MASS)
+library(rpart)
+library(rattle)
+
+```
+
+```{r}
+#CODGames2_mp <- read_excel("CODGames2_mp.xlsx")
+CODGames2_mp <- read_excel("C:/Users/Blungus/OneDrive - The Pennsylvania State University/2024-25/Spring Sem/Stat 380/Test CSV files/CODGames2_mp.xlsx")
+```
+
+## Problem 1
+
+```{r}
+cod_full <- CODGames2_mp %>%
+  filter(FullPartial == "Full")
+```
+
+```{r}
+ggplot(data = cod_full, aes(x = XPType, y = TotalXP)) +
+  geom_boxplot() +
+  labs(x = "XP Boost Type", 
+       y = "XP Points Earned",
+       title = "Player Experience Points by Boost Category") +
+  theme_minimal()
+```
+
+```{r}
+xp_summary <- cod_full %>%
+  group_by(XPType) %>%
+  summarize(
+    Count = n(),
+    Mean = mean(TotalXP),
+    Median = median(TotalXP),
+    Min = min(TotalXP),
+    Max = max(TotalXP),
+    StdDev = sd(TotalXP)
+  )
+
+xp_summary
+```
+
+The data shows players who play "Double XP + 10%" earn more points than those playing "10% Boost". With a mean of 17,242.17 compared to 9,094.45, players earn almost twice as many points in Double XP games. The median values (15,738 vs. 9,039) confirm this pattern. Double XP games show more variation in points earned (6,648.59 vs. 2,605.95). Players who want to level up fast should play during Double XP events.
+
+## Problem 2
+
+### a.
+
+```{r}
+# Convert 'Result' into 'TeamScore' and 'OpponentScore', then into 'outcome'
+cod_full <- cod_full %>%
+  separate(Result,into = c("TeamScore", "OpponentScore"), sep = "-", convert = TRUE)%>%
+  mutate(Outcome = case_when(
+    TeamScore > OpponentScore ~ "Win",
+    TeamScore < OpponentScore ~ "Loss",
+    TRUE ~ "Tie"
+  ))
+
+# indicator based on 'XPType'
+cod_full$XPType <- ifelse(cod_full$XPType == "10% Boost", 1, 0)
+
+# indicator based on outcomes for 'Win'
+cod_full$Win <- ifelse(cod_full$Outcome == "Win", 1, 0)
+
+
+
+# only TDM
+cod_TDM_full <- cod_full %>%
+  filter(GameType == "HC - TDM")
+
+
+
+# create matrix > LASSO
+X <- model.matrix(Score ~ TotalXP + Eliminations + Deaths + Damage + XPType + Win, 
+                  data = cod_TDM_full)[,-1]
+y <- cod_TDM_full$Score
+
+```
+
+```{r}
+# Lasso CV using X and y
+set.seed(123)
+lassoFit <- cv.glmnet(X, y, alpha = 1)
+
+# plot 
+plot(lassoFit)
+
+# best lambda
+best_lambda <- lassoFit$lambda.min
+best_lambda
+
+# coefficients for best lambda
+coef(lassoFit, s = best_lambda)
+
+```
+
+#### The optimal penalty is λ = 2.611974.
+
+####   non-zero coefficients:
+
+-   TotalXP: For every XP point, score increases by 0.0598 points
+
+-   Eliminations: Every elimination increases the score by 159.129 points
+
+-   Deaths: Each death decreases score by 72.778 points
+
+-   Damage: Each point of damage increases the score by 0.9477
+
+-   XPType (10% Boost): Games with the 10% XP Boost increases the score by 361.5755 points
+
+-   Win: If the player wins, the score will decrease by 447.1919 points
+
+```{r}
+# Fit model > stepwise
+lm_full <- lm(Score ~ TotalXP + Eliminations + Deaths + Damage + XPType + Win,
+              data = cod_TDM_full)
+
+# stepwise selection
+step_model <- step(lm_full)
+
+summary(step_model) #for interpretation purpose. 
+```
+
+Stepwise model selected (TotalXP, Eliminations, Deaths, and XPType) as significant predictors of player score. The strongest predictor is Eliminations, where each elimination adds around 185 points to the score. Deaths have a negative effect. Also,the 10% XP Boost is linked with a higher score, which might show changes in play style or competitiveness. The model explains around 76.97% of variance in score, showing a good/strong fit.
+
+```{r}
+# LASSO
+lasso_vars <- rownames(coef(lassoFit, s = best_lambda))[coef(lassoFit, s = best_lambda)[, 1] != 0]
+lasso_vars <- lasso_vars[lasso_vars != "(Intercept)"]
+lasso_vars
+
+# stepwise
+stepwise_vars <- names(coef(step_model))[-1]
+stepwise_vars
+```
+
+LASSO and Stepwise identified (TotalXP, Eliminations, Deaths, Win and XPType) as a good predictors of score. This suggests that these are highly influential in different methods.
+
+The difference is that LASSO included Damage, which Stepwise excluded. LASSO retain more variables even a small improvement in fit, but Stepwise prioritizes less/fewer variables with minimal loss in.
+
+The 2 methods agree. The core predictors (TotalXP, Eliminations, Deaths, Win, and XPType) are used across both models. Damage may still factor into score, but stepwise determined it was not relevant to include.
+
+### b.
+
+```{r}
+# Decision tree model
+set.seed(123)
+tree_model <- rpart(Score ~ TotalXP + Eliminations + Deaths + Damage + XPType + Win,
+                    data = cod_TDM_full,
+                    method = "anova",
+                    control = rpart.control(minbucket = 15))
+
+fancyRpartPlot(tree_model, cex = 0.8)
+
+# Top 3 predictors
+# summary(tree_model)
+100*tree_model$variable.importance/sum(tree_model$variable.importance)
+
+
+```
+
+The top 3 variables of importance when it comes to predicting score using 'total XP', 'eliminations', 'deaths', 'damage', 'XPType', and whether the player's team won ('Win') are as follows:
+
+1.  Damage:
+
+-   Importance value of 39.807799
+
+2.  Eliminations:
+
+-   Importance value of 37.696686
+
+3.  TotalXP:
+
+-   Importance value of 10.216599
+
+### C.
+
+```{r}
+# Standardize 
+cod_TDM_scaled <- cod_TDM_full %>%
+  mutate(Score=scale(Score),
+         TotalXP=scale(TotalXP),
+         Eliminations=scale(Eliminations),
+         Deaths=scale(Deaths),
+         Damage=scale(Damage),
+         XPType=scale(XPType),
+         Win=scale(Win))
+
+# Fit model > standardized stepwise
+lm_standardized_full <- lm(Score ~ TotalXP + Eliminations + Deaths + Damage + XPType + Win,
+              data = cod_TDM_scaled)
+# Standardized stepwise selection
+step_standardized_model <- step(lm_standardized_full)
+
+# Storing new coefficients
+stepwise_standardized_vars <- names(coef(step_standardized_model))[-1]
+
+# Display new coefficients and linear model
+stepwise_standardized_reg_final <- lm(as.formula(paste("Score ~", paste(stepwise_standardized_vars, collapse = " + "))),
+                                      data = cod_TDM_scaled)
+
+stepwise_standardized_coef<- summary(stepwise_standardized_reg_final)$coefficients
+
+magnitudes<- abs(stepwise_standardized_coef[, "Estimate"])
+sorted_magnitudes <- sort(magnitudes, decreasing = TRUE)
+
+options(scipen = 999)
+100*sorted_magnitudes/sum(sorted_magnitudes)
+
+```
+
+When considering the linear regression model that came out of stepwise feature selection, the top 3 variables of importance when predicting score using 'total XP', 'eliminations', 'deaths', 'XPType', and whether the player's team won ('Win') are as follows:
+
+1.  Eliminations:
+
+-   Magnitude of importance: 49.1098
+
+2.  TotalXP:
+
+-   Magnitude of importance: 18.2391
+
+3.  Deaths:
+
+-   Magnitude of importance: 13.1711
+
+The stepwise feature selection decided to remove the 'Damage' variable to provide the best result for predicting 'Score', so naturally the next most important variable was 'Deaths', as it was right behind 'TotalXP' ranked 4th in importance in the regression tree model's coefficients. The regression tree values of importance for 'Damage' and 'Eliminations' were very close to each other, leading to a large drop off once 'TotalXP' was considered. In the regression model above, however, 'Eliminations' carries the most weight as it drops off heavily next to the magnitudes of importance for 'TotalXP' and 'Deaths'. This lines up as expected because the top coefficient in the regression tree was 'Damage', so removing that from the model allows 'Deaths' to fit into the top 3.
+
+
+## Group Evaluations
+
+### Omer Kandemir
+Omer worked on all of task 1, which was the analysis/boxplots associated with the 'XPType' and 'TotalXP'. He provided ample discussion and made the plots clear and easy to understand. Some comments could be added for conciseness, but that did not detract from his overall performance.
+
+### Rayan Abumansi
+Rayan was tasked with working on the first half of task 2, including parts a and b. However, he asked for assistance with the latter half of part b since he was stumped on the top 3 indicators, so I added that to my personal contribution for the mini-project. Rayan's code and decision trees ran as they should, but he incorrectly created the 'Win' variable, so some discussion/results were amended in my section. He did a very good job with commenting each part of the code for better readability. Strong discussion on model comparison.
+
+
+
+### Logan Camacho
+I was tasked with finishing problem 2 part b and part c, as well as doing an overall proofread and debug of the entire project to ensure we did not miss anything important within the mini-project. As previously mentioned, I had to amend problem 2 part a's code to properly reflect 'Win' and 'XPType' as indicators before standardizing, but overall saw no fatal errors amongst the group. Part c was the most computationally intensive part, so I took the time to understand the code in order to properly report outcomes in our discussion.
+
+

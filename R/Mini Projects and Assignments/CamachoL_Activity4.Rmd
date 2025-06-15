@@ -1,0 +1,250 @@
+---
+title: "Lecture 12 - kNN Classification"
+output: html_document
+date: "March 21, 2025"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Front Matter
+
+```{r}
+remove(list = ls())
+library(tidyverse)
+library(palmerpenguins)
+library(FNN)
+```
+
+## Example 2a - Remove NA's and perform training/validation split
+
+```{r}
+#Create object named penguins in Environment; Requires palmerpenguins package
+data("penguins")
+
+#Omit NA's
+penguins <- na.omit(penguins)
+
+#Train/Validation split (90/10, 321)
+set.seed(321)
+trainInd <- sample(1:nrow(penguins), floor(0.9*nrow(penguins)))
+set.seed(NULL)
+
+Train <- penguins[trainInd, ]
+Validation <- penguins[-trainInd, ]
+```
+
+## Example 2b - Recreate plot
+
+```{r}
+p1 <- ggplot(data = Train, mapping = aes(x = bill_length_mm,
+                                   y = bill_depth_mm,
+                                   color = species,
+                                   shape = species)) +
+  geom_point() +
+  labs(x = "Bill Length (in mm)",
+       y = "Bill Depth (in mm)",
+       color = "Species",
+       shape = "Species") 
+
+p1 + 
+  geom_point(data = Validation[1 , ], 
+             color = "black", 
+             shape = 4, 
+             size = 2)
+```
+
+## Example 2c - Recreate plot using 22nd Validation Point
+
+```{r}
+p1 <- ggplot(data = Train, mapping = aes(x = bill_length_mm,
+                                   y = bill_depth_mm,
+                                   color = species,
+                                   shape = species)) +
+  geom_point() +
+  labs(x = "Bill Length (in mm)",
+       y = "Bill Depth (in mm)",
+       color = "Species",
+       shape = "Species") 
+
+p1 + 
+  geom_point(data = Validation[22 , ], 
+             color = "black", 
+             shape = 4, 
+             size = 2)
+```
+
+## Example 2d - Recreate plot using 27nd Validation Point
+
+```{r}
+p1 <- ggplot(data = Train, mapping = aes(x = bill_length_mm,
+                                   y = bill_depth_mm,
+                                   color = species,
+                                   shape = species)) +
+  geom_point() +
+  labs(x = "Bill Length (in mm)",
+       y = "Bill Depth (in mm)",
+       color = "Species",
+       shape = "Species") 
+
+p1 + 
+  geom_point(data = Validation[27 , ], 
+             color = "black", 
+             shape = 4, 
+             size = 2)
+```
+
+## Example - Not in Note Packet
+
+What happens if we tried to use our knn code from before?
+
+```{r, error = TRUE}
+#Scale Data
+xvars <- c("bill_length_mm", "bill_depth_mm")
+penguins[ , xvars] <- scale(penguins[ , xvars], center = TRUE, scale = TRUE)
+
+# Train/Validation split
+set.seed(321)
+trainInd <- sample(1:nrow(penguins), floor(0.9*nrow(penguins)))
+set.seed(NULL)
+
+knn_res <- knn.reg(train = Train[ , xvars, drop = FALSE],
+                   test = Validation[ , xvars, dropt = FALSE],
+                   y = Train$species,
+                   k = 3)
+```
+
+We get an error message.
+
+## Example 2e - Prepping data
+
+```{r}
+#Create an object called penguins in my environment
+data("penguins")
+
+#Omit NA's
+penguins <- na.omit(penguins)
+
+#Scale Data
+xvars <- c("bill_length_mm", "bill_depth_mm")
+penguins[ , xvars] <- scale(penguins[ , xvars], center = TRUE, scale = TRUE)
+
+# Train/Validation split
+set.seed(321)
+trainInd <- sample(1:nrow(penguins), floor(0.9*nrow(penguins)))
+set.seed(NULL)
+
+Train <- penguins[trainInd, ]
+Validation <- penguins[-trainInd, ]
+
+#Build kNN classification model
+#I would recommend setting a seed here in case ties occur and must be broken randomly
+knn_res <- knn(train = Train[ , xvars, drop = FALSE],
+               test = Validation[ , xvars, drop = FALSE],
+               cl = Train$species,
+               k = 3)
+
+#Access Predictions
+knn_res #In general, do NOT include this in your code; 
+```
+
+## Example 2f - Adding predictions to the Validation set
+
+```{r}
+#Add predictions to the Validation set
+Validation <- 
+  Validation %>%
+  mutate(pred_species = knn_res)
+```
+
+## Example 2g
+
+```{r}
+Validation[c(1, 22, 27), ] %>%
+  select(species, pred_species)
+```
+
+## Example 4a - Creating a confusion matrix
+
+```{r}
+#Confusion Matrix - Assumes you've added predictions to Validation
+table(Validation$pred_species, Validation$species)
+
+#If predictions are not in Validation, use: table(knn_res, Validation$species)
+```
+
+## Example 4b
+
+```{r}
+
+```
+
+## Example 4c
+
+```{r}
+
+```
+
+
+## Activity 4
+```{r}
+#Create an object called penguins in my environment
+#Omit NA's
+#Scale Data
+# done in example 2e
+
+maxK<-75
+predVec <-rep(NA, maxK)
+
+# Train/Validation split
+set.seed(315)
+trainInd2 <- sample(1:nrow(penguins), floor(0.85*nrow(penguins)))
+set.seed(NULL)
+
+Train2 <- penguins[trainInd2, ]
+Validation2 <- penguins[-trainInd2, ]
+
+#Build kNN classification model
+#Loop
+for(i in 1:maxK){
+  
+  #Train the kNN Model and obtain Predictions
+  knnRes2 <- knn(train = Train2[ , xvars, drop = FALSE],
+               test = Validation2[ , xvars, drop = FALSE],
+               cl = Train2$species,
+               k = i)
+  predVec[i] <- mean(knnRes2 == Validation2$species)
+  
+}
+
+
+
+#Create a temp DF for plotting in ggplot (k column with numbers 1 to maxK)
+tempDF <- data.frame(k=1:maxK,
+                     pred_species = predVec)
+max_ks <- which(predVec == max(predVec))
+#Create plot showing rmse as a function of k
+ggplot(data = tempDF,
+       mapping = aes(x=k,y=pred_species))+
+  geom_line()+
+  labs(x = "Number of Nearest Neighbors (k)",
+       y = "Predicted Species")+
+  geom_point(data = tempDF[max_ks, ],
+             color = "red",
+             shape = 1,
+             size = 5)
+
+
+which.max(predVec)
+
+
+tempDF[max_ks, ]
+
+
+```
+
+The kNN classification model tracks accuracy of predictions for each instance of k being ran on the data, and based on the results, our highest prediction score was a 0.96 across multiple values of k. The best value of K I would use in this scenario would be a value of k=7, since it being odd helps break ties across the 3 species of penguins, and 7 being small enough for efficient processing. If I had to select the next two possible values of k, it would be 17 or 19 for overall model stability.
+
+
+

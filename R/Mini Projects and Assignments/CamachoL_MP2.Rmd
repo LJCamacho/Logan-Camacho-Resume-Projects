@@ -1,0 +1,230 @@
+---
+title: "CamachoL_MP2"
+author: "Logan Camacho"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Front Matter and read the dataset into R
+```{r}
+
+#Add libraries as needed
+library(tidyverse)
+library("readxl")
+
+
+#Read in xlsx file
+ColdWarGames <- read_excel("C:/Users/Blungus/OneDrive - The Pennsylvania State University/2024-25/Spring Sem/Stat 380/Test CSV files/CODGames2_mp.xlsx")
+```
+
+## 1. Explain why you should avoid using the function na.omit() to remove observations (rows) with missing data for the CODGames2_mp dataset. NOTE: If you want to write a great answer, use the function that we wrote in the notes for counting the number of NA’s and apply that function to each row of the dataset. (In the notes we applied the function to each column instead of each row.)
+
+Every single observation has at minimum 8 NA's present, most of which are from columns that are entirely full of NA's because those variables do not apply to any of the game modes played throughout the data frame (think `defuse` and `plants` columns). Using na.omit() would essentially delete the entire data frame. 
+
+```{r}
+ColdWarGames <- ColdWarGames %>%
+  mutate(sumNA=rowSums(is.na(ColdWarGames)))
+head(ColdWarGames, 1)
+
+
+```
+
+## 2. In Mini-Project 1, you were told to “Begin” exploring the dataset by exploring 5 variables of your
+choice. Continue that exploration. Explore 5 more variables of your choice. (You should explore at least
+one categorical and at least one quantitative variable.) Perform a univariate exploration of each variable.
+In other words, do not look at the relationship between pairs of variables. Instead, just explore each
+variable by itself. The variables explored will be **Deaths, ElimDeathRatio, FullPartial, Score, DidPlayerVote**
+
+### Deaths
+
+Death count in Call of Duty is a clear defining factor when it comes to gauging someone's skill and overall performance. No matter how many kills you may get, if you fail to maintain a consistent ratio compared to your death count then we understand your true match performance. Considering the data was taken from a Hardcore (HC) only playlist (lower health, less HUD elements, friendly fire enabled, no killcams, overall more difficult), the player has enough skill to endure the constant risk of death at a moment's notice.
+
+```{r}
+summary(ColdWarGames$Deaths)
+```
+
+Seeing the death count with the kills associated for each match only allows us to see so much information before we have to make inferences and assumptions; however, outliers are much easier to interpret. We see the player had a mean death count of 15, but what was the mean kill count? When we look at the max/min death counts of 42 and 4 respectively, we can infer that the kills associated with either value were likely skewed in the opposite direction. For example, the player only had 13 kills during his 42 death match while he stuck even with 4 kills during his match with only 4 deaths. It is considerably harder to keep the K/D ratio closer to 1 when the death count is so high, hence my point stands if an unknowing audience had to infer the player's performance based on this metric alone.
+
+
+
+```{r}
+ggplot(ColdWarGames, aes(x= Deaths))+
+  geom_histogram(bins= 20, fill ="cyan", color = "black" )+
+  scale_x_continuous(breaks = seq(0,max(ColdWarGames$Deaths), by = 5)) +  
+  labs(x = "Death count",
+       y = "Matches played")
+```
+
+The Q1 to Q3 spread of deaths went from 12 to 18 deaths, which means that 50% of the matches had 12-18 deaths, and simultaneously the other 50% had either <=11 or >=19 deaths.
+
+
+### ElimDeathRatio
+
+To tack onto the previous explanation of the `Deaths` variable and the `Eliminations` variable discussed in MP1, I have created a new variable that combines the two as a ratio commonly seen front and center while playing Call of Duty titles. While not as imperative as the well-known kill-to-death ratio, eliminations still hold weight when understanding player performance, and were implemented as a way to benefit players who put the work in to eliminate a weak opponent or helped a teammate finish the job. Remember that the player only has 30 Health points instead of the default 150 in the HC game modes tracked within the dataset, meaning more times than not the player did do all the damage to their oppenents.
+```{r}
+ColdWarGames <- ColdWarGames %>%
+  mutate(ElimDeathRatio=Eliminations/Deaths)
+
+head(ColdWarGames %>% select(Result,Eliminations, Deaths, ElimDeathRatio) %>%
+  arrange(desc(ElimDeathRatio)))
+```
+
+```{r}
+summary(ColdWarGames$ElimDeathRatio)
+```
+
+The player had an average Elimination to Death ratio of 1.11, so generally speaking this means the player had more eliminations than deaths on average. The minimum Elim-to-Death ratio was 0.2, which translates to only getting 1 elimination per every 5 deaths in a single match; a very poor performance compared to the max ratio of 3.5, or 7 eliminations for every 2 deaths.
+
+```{r}
+ggplot(ColdWarGames, aes(x= ElimDeathRatio))+
+  geom_histogram(bins= 50, fill ="red", color = "black" )+
+  scale_x_continuous(breaks = seq(0,max(ColdWarGames$ElimDeathRatio), by = .5)) +  
+  labs(x = "Elim-to-Death Ratio",
+       y = "Matches played")
+```
+
+The overall distribution is right skewed with 2 outliers consisting of 2 matches where the player maintained a ratio of 3.33 eliminations per death or higher.
+
+
+### FullPartial
+
+```{r}
+
+completeGames <- ColdWarGames %>% 
+  count(FullPartial) %>%
+  filter(FullPartial== "Full")%>%
+  pull(n)
+
+partialGames <- ColdWarGames %>% 
+  count(FullPartial) %>%
+  filter(FullPartial== "Partial")%>%
+  pull(n)
+
+completeGames
+partialGames
+gameRatio <- completeGames/nrow(ColdWarGames)
+gameRatio
+ggplot(ColdWarGames, aes(x= FullPartial)) +
+  geom_bar()+
+  scale_color_hue()+
+  scale_y_continuous(breaks = seq(0, completeGames, by = 20))+
+  labs(x = "Match length",
+       y = "Number of matches")
+```
+
+`FullPartial` is a string indicator variable that determines whether or not the player played each match start to finish. A `Partial` match means that the match was already in progress when the player happened to join, so subsequently they would have missed the map voting process entirely. Over 90 percent of the matches played were played start to finish, as shown with the bar graph and the ratio output in R.
+
+
+
+
+### Score
+
+`Score` is the most generic metric among the variables taken from Call of Duty, as self explanatory as it is. Score can be increased by garnering eliminations, assists, and objectives (including time spent holding an objective), while also being any number greater than 0, as it cannot be decreased. When looking at the scoreboard, it can provide a good idea of which players performed the best/worst overall throughout each match, but can be inflated by eliminations when players ignore objectives.   
+
+```{r}
+summary(ColdWarGames$Score)
+```
+
+The player scored an average of 2945 points per game, with respective minimum's and max's being 100 points and 7315 points. As previously mentioned, eliminations can inflate the player's score since certain modes like Team Deathmatch (TDM) hold the highest point values for each elimination, and rightly so. When the player has a match in Domination or Hardpoint, score earned per elimination is lowered to push players in securing objectives as a team. This would even out hypothetically if it were not for the fact that these modes tend to be some of the longest matches played. 
+
+```{r}
+head(ColdWarGames %>%
+       arrange(desc(Eliminations))%>%
+       select(Eliminations,Deaths, Score, ElimDeathRatio, GameType))
+```
+
+The match with the most eliminations is far from the match with the highest score. Part of it has to do with `GameType` being an objective based mode, but also notice how the higher scoring games have a higher `ElimDeathRatio`.
+
+```{r}
+head(ColdWarGames %>%
+       arrange(desc(Score))%>%
+       select(Eliminations,Deaths, Score, ElimDeathRatio, GameType))
+```
+
+Another way the game calculates score is that it gives a multiplier for a player based on what "killstreak" the player is on, or how many consecutive kills a player accrues without dying. This explains why the high kill count in the last table did not come with a similarly high score value.
+
+```{r}
+ggplot(ColdWarGames, aes(x= Score))+
+  geom_histogram(bins= 40, fill ="red", color = "black" )+
+  scale_x_continuous(breaks = seq(0,max(ColdWarGames$Score), by = 1000)) +  
+  labs(x = "Score",
+       y = "Matches played")
+```
+
+The score visualization is slightly right-skewed, as there are a quite a few games were the player outperformed their averages.
+
+
+### DidPlayerVote
+
+In context of the game, the pre-match voting system allows players to pick between 2 different maps, with differing game modes depending on the playlist selected prior to joining a lobby. If the player joins a match in progress, then there is no voting process since the map/game type pair is already selected and loaded for that match. What strikes me as interesting in context of the dataset, is that the player has never voted for or against any map no matter if they had the choice before completing a full match. 
+
+
+```{r}
+head(ColdWarGames %>% 
+       select(Map1, Map2, MapVote, FullPartial, DidPlayerVote))
+
+ColdWarGames %>% 
+  count(DidPlayerVote)
+```
+
+This may have been done to reduce bias in map choice, but this is up for inference considering we do not know the original purpose of collecting all this data.
+
+
+## 3. Your task is to write code to calculate the proportion of games the player won, the proportion of games the player lost, and the proportion of games that resulted in a draw. To full credit, the code must calculate the proportions in a general way instead of a way that is specific to your dataset (e.g., do not divide by typing /211 (since 211 is the exact number of rows). Write code that would work regardless of whether the dataset has 211 rows or 2000 rows. NOTE: While you may create a plot that shows the proportions, I still want to see the actual numeric values of the proportions
+
+```{r}
+ColdWarGames <- ColdWarGames %>%
+  separate(Result,into = c("TeamScore", "OpponentScore"), sep = "-", convert = TRUE)%>%
+  mutate(Outcome = case_when(
+    TeamScore > OpponentScore ~ "Win",
+    TeamScore < OpponentScore ~ "Loss",
+    TRUE ~ "Tie"
+  ))
+
+resultDF<-ColdWarGames%>%
+  count(Outcome)%>%
+  mutate(percentage=paste0(round((n / nrow(ColdWarGames)) * 100, 2), "%"))
+```
+
+```{r}
+resultDF
+```
+
+
+
+
+## 4. WE WILL DISCUSS THIS IDEA IN CLASS ON MONDAY, MARCH 31. (Asking and answering an inference question that can be answered using logistic regression.) For this task, you will write your own inference question by building a model in which the response variable is whether the player’s team won the game. Treat a game in which the teams tied as not winning. Then, you will answer build the model and answer the question using the model.
+
+### Will having a higher elimination to death ratio (1.5) result in the player winning?
+
+```{r}
+#Convert Survived to indicator named SurvivedNum (Yes = 1, No = 0)
+ColdWarGames <-
+  ColdWarGames %>%
+  mutate(winNum = ifelse(TeamScore > OpponentScore, 1, 0))
+
+#Build model with indicator as the response
+model1 <- glm(winNum ~ ElimDeathRatio, family = binomial, data = ColdWarGames)
+
+#Establish threshold
+threshold <- .50
+
+#Find predicted probabilities for all in dataset
+pred_prob <- predict(model1, newdata = ColdWarGames, type = "response")
+
+range(pred_prob)
+
+#Predict survival
+pred_win <- ifelse(pred_prob > threshold, "Yes", "No")
+
+predict(model1, newdata = data.frame(ElimDeathRatio = 1.5), type = "response")
+
+#Create confusion matrix - Basic   table(pred_win, ColdWarGames$winNum)
+```
+
+Using the established threshold of .50, we see that our inference considers a player with an Elimination to Death Ratio of 1.5 and a probability of 66.05% to win the game. We can conclude this as a true positive that the player did in fact win.
+

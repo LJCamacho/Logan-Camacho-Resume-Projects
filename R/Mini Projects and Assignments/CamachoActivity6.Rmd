@@ -1,0 +1,185 @@
+---
+title: "Feature Selection Part 2"
+output: html_document
+date: "April 11, 2025"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Front Matter
+```{r}
+#Remove all objects from Environment
+remove(list = ls())
+
+#Load Packages
+library(tidyverse)
+library(glmnet) #To perform LASSO and Ridge
+library(ISLR2) #For Credit Dataset
+
+#Load data
+data(Credit)
+```
+
+## Example - Applying Shrinkage Methods in R
+#### Part a - Preparing the data for glmnet
+```{r}
+#Create input matrix and response vector
+Xmat <- model.matrix(Balance ~ ., data = Credit)[, -1]
+yvec <- Credit$Balance
+
+#Perform 80/20 training/validation split using seed of 1
+set.seed(1)
+trainInd <- sample(1:nrow(Credit), floor(0.8*nrow(Credit)))
+set.seed(NULL)
+
+#Split Xmat and yvec separately
+XmatTrain <- Xmat[trainInd, ]
+XmatValidation <- Xmat[-trainInd, ]
+
+yvecTrain <- yvec[trainInd]
+yvecValidation <- yvec[-trainInd]
+
+
+
+```
+
+Name the objects above XmatTrain, XmatValidation, yvecTrain, yvecValidation.
+
+#### Part b - Build the LASSO model and plot the coefficient paths
+```{r}
+#Fit the LASSO model (let R choose lambda sequence)
+lassoModel <- glmnet(x = XmatTrain,
+                     y = yvecTrain,
+                     family = "gaussian",
+                     alpha = 1,
+                     lambda = NULL,
+                     standardize = TRUE)
+
+#Create a plot of the coefficient paths
+plot(lassoModel, xvar = "lambda", label = TRUE)
+```
+
+#### Part c - Build the Ridge model and plot the coefficient paths
+```{r}
+#Fit the Ridge model (let R choice lambda sequence)
+ridgeModel <- glmnet(x = XmatTrain, y = yvecTrain,
+                     family = "gaussian",
+                     alpha = 0, 
+                     lambda = NULL,
+                     standardize = TRUE)
+
+#Create a plot of the coefficient paths
+plot(ridgeModel, xvar = "lambda", label = TRUE)
+```
+
+#### Part d - For the LASSO models Extract 44th value of lambda and associated coefficients
+```{r}
+#Extract the 44th value of lambda
+lassoModel$lambda[44]
+
+#Calculate the log of the 44th value of lambda (doing this since the plot of coefficient paths used log(lambda))
+log(lassoModel$lambda[44])
+
+#Obtain coefficients associated with 44th value of lambda
+predict(lassoModel, s = lassoModel$lambda[44], type = "coefficients")
+
+#Add vertical line at 44th lambda on coefficients plot
+plot(lassoModel, xvar = "lambda", label = TRUE)
+abline(v = log(lassoModel$lambda[44]), col = "red")
+
+```
+
+#### Part e - Pick Optimal Value of Lambda for LASSO
+```{r}
+#Use 10-fold CV to pick lambda for LASSO (use seed 123)
+set.seed(123)
+lassoCV <- cv.glmnet(x = XmatTrain,
+                     y = yvecTrain,
+                     family = "gaussian",
+                     alpha = 1,
+                     lambda = NULL,
+                     standardize = TRUE,
+                     nfolds = 10)
+set.seed(NULL)
+#Show the LASSO CV results
+plot(lassoCV)
+```
+
+#### Not on Handout - Pick Optimal Value of Lambda for Ridge
+```{r}
+#Use 10-fold CV to pick lambda for Ridge
+set.seed(123)
+ridgeCV <- cv.glmnet(x = XmatTrain, y = yvecTrain,
+                    family = "gaussian",
+                    alpha = 0, 
+                    lambda = NULL,
+                    standardize = TRUE,
+                    nfolds = 10)
+set.seed(NULL)
+
+#Show the Ridge CV results
+plot(ridgeCV)
+```
+
+
+#### Part f - Display the optimal values of lambda and the associated coefficients for LASSO
+```{r}
+#Display the optimal values of lambda
+lassoCV$lambda.min
+lassoCV$lambda.1se
+
+#Store the coefficients associated with the optimal values
+coefLamMin <- predict(lassoCV, s = lassoCV$lambda.min, type = "coefficients")
+coefLam1se <- predict(lassoCV, s = lassoCV$lambda.1se, type = "coefficients")
+
+#Create a data frame for comparing the coefficients
+tempdf <- 
+  data.frame(Variable = row.names(coefLamMin), 
+             lamMin = as.numeric(coefLamMin), 
+             lam1se = as.numeric(coefLam1se))
+
+tempdf
+```
+
+### Part g - Obtain Preditions for Validation Set and calculate RMSE
+```{r}
+#LASSO
+lassoYhat <- predict(lassoCV,
+                     s = lassoCV$lambda.min,
+                     newx = XmatValidation)
+  
+  
+  
+lassoMSE <- mean((yvecValidation - lassoYhat)^2)
+  
+  
+lassoRMSE <- sqrt(lassoMSE)
+
+
+
+#Ridge  122.15
+ridgeYhat <- predict(ridgeCV,
+                     s = ridgeCV$lambda.min,
+                     newx = XmatValidation)
+ridgeRMSE <- sqrt(mean((yvecValidation - ridgeYhat)^2))
+
+#Least Squares (train and validation are not the same as we used in cv.glmnet)  103.49
+XmatTrainDF <- as.data.frame(XmatTrain)
+XmatTrainDF$Balance <- yvecTrain
+XmatValDF <- as.data.frame(XmatValidation)
+
+model1 <- lm(Balance ~ ., data = XmatTrainDF)
+LSYhat <- predict(model1, newdata = XmatValDF)
+LSrmse <- sqrt(mean((yvecValidation - LSYhat)^2))
+
+tibble(
+  Model = c("LASSO", "Ridge", "Least Squares"),
+  RMSE = c(lassoRMSE, ridgeRMSE, LSrmse)
+)
+
+
+```
+
+As we can see from the 3x2 table comparing the RMSE values of LASSO (where lambda is based on minimizing the cross validation error), Ridge (where lambda is based on minimizing the cross validation error), and least squares regression when using all variables to predict the average balance on someone's credit card,  the LASSO model gave us the best results with the lowest RMSE value of 102.84.
