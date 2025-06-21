@@ -20,7 +20,7 @@ library(rattle) #to display trees
 library(FNN) #For KNN classification
 
 
-setwd("C:/Users/Blungus/OneDrive - The Pennsylvania State University/2024-25/Spring Sem/Stat 380/Test CSV files/Final Project")
+setwd("C:/Users/chrom/OneDrive - The Pennsylvania State University/previous years/2024-25/Spring Sem/Stat 380/Test CSV files/Final Project")
 
 CODGames_p1_380 <- read.csv("CODGames_p1_380.csv")
 CODGames_p2_380 <- read.csv("CODGames_p2_380.csv")
@@ -626,7 +626,7 @@ After accounting for Score, GameType still makes a difference in TotalXP, but no
 
 In this section, I am tasked with comparing a variety of classification methods and models to answer my own research question:
 
-### Can we predict if the player had a positive or negative Elimination-to-Death ratio using 'WeaponClass', map choice, 'Score', 'Damage', winning/losing the match, and 'GameType'?
+### Can we predict if the player had a positive or negative Elimination-to-Death ratio using 'WeaponClass', 'map choice', 'Score', 'Damage', winning/losing the match, and 'GameType' as input features?
 
 Call of Duty: Black Ops Cold War is an easy-to-learn yet hard to master game, where there is not a single defined way in order to succeed personally and as a team in an online setting. Most players have found ways to succeed using the most optimal weapons available, while others handicap themselves to make winning a more enjoyable challenge to overcome; some maps, modes, and weapons are overall better options universally than other weapons, so here I want to see if it is possible to associate different game modes, some player metrics, map selection, and type of weapon used with this overarching tell of player skill.
 

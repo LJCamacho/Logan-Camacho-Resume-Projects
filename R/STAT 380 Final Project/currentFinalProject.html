@@ -359,17 +359,23 @@ display: none;
 <h2>Front Matter</h2>
 <pre class="r"><code>rm(list = ls())
 library(tidyverse)</code></pre>
+<pre><code>## Warning: package &#39;tidyverse&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;ggplot2&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;readr&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;forcats&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;lubridate&#39; was built under R version 4.4.2</code></pre>
 <pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
 ## ✔ dplyr     1.1.4     ✔ readr     2.1.5
 ## ✔ forcats   1.0.0     ✔ stringr   1.5.1
-## ✔ ggplot2   3.5.2     ✔ tibble    3.2.1
+## ✔ ggplot2   3.5.1     ✔ tibble    3.2.1
 ## ✔ lubridate 1.9.4     ✔ tidyr     1.3.1
-## ✔ purrr     1.0.4     
+## ✔ purrr     1.0.2     
 ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()
 ## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
 <pre class="r"><code>library(randomForest) #For Random Forest</code></pre>
+<pre><code>## Warning: package &#39;randomForest&#39; was built under R version 4.4.3</code></pre>
 <pre><code>## randomForest 4.7-1.2
 ## Type rfNews() to see new features/changes/bug fixes.
 ## 
@@ -383,6 +389,7 @@ library(tidyverse)</code></pre>
 ## 
 ##     margin</code></pre>
 <pre class="r"><code>library(neuralnet) #For neural net</code></pre>
+<pre><code>## Warning: package &#39;neuralnet&#39; was built under R version 4.4.3</code></pre>
 <pre><code>## 
 ## Attaching package: &#39;neuralnet&#39;
 ## 
@@ -390,6 +397,7 @@ library(tidyverse)</code></pre>
 ## 
 ##     compute</code></pre>
 <pre class="r"><code>library(rattle) #to display trees</code></pre>
+<pre><code>## Warning: package &#39;rattle&#39; was built under R version 4.4.3</code></pre>
 <pre><code>## Loading required package: bitops
 ## Rattle: A free graphical interface for data science with R.
 ## Version 5.5.1 Copyright (c) 2006-2021 Togaware Pty Ltd.
@@ -400,10 +408,9 @@ library(tidyverse)</code></pre>
 ## The following object is masked from &#39;package:randomForest&#39;:
 ## 
 ##     importance</code></pre>
-<pre class="r"><code>library(FNN) #For KNN classification
-
-
-setwd(&quot;C:/Users/Blungus/OneDrive - The Pennsylvania State University/2024-25/Spring Sem/Stat 380/Test CSV files/Final Project&quot;)
+<pre class="r"><code>library(FNN) #For KNN classification</code></pre>
+<pre><code>## Warning: package &#39;FNN&#39; was built under R version 4.4.2</code></pre>
+<pre class="r"><code>setwd(&quot;C:/Users/chrom/OneDrive - The Pennsylvania State University/previous years/2024-25/Spring Sem/Stat 380/Test CSV files/Final Project&quot;)
 
 CODGames_p1_380 &lt;- read.csv(&quot;CODGames_p1_380.csv&quot;)
 CODGames_p2_380 &lt;- read.csv(&quot;CODGames_p2_380.csv&quot;)
@@ -1177,10 +1184,11 @@ GameType just adds a smaller extra effect.</p>
 <p>In this section, I am tasked with comparing a variety of
 classification methods and models to answer my own research
 question:</p>
-<div id="can-we-predict-if-the-player-had-a-positive-or-negative-elimination-to-death-ratio-using-weaponclass-map-choice-score-damage-winninglosing-the-match-and-gametype" class="section level3">
+<div id="can-we-predict-if-the-player-had-a-positive-or-negative-elimination-to-death-ratio-using-weaponclass-map-choice-score-damage-winninglosing-the-match-and-gametype-as-input-features" class="section level3">
 <h3>Can we predict if the player had a positive or negative
-Elimination-to-Death ratio using ‘WeaponClass’, map choice, ‘Score’,
-‘Damage’, winning/losing the match, and ‘GameType’?</h3>
+Elimination-to-Death ratio using ‘WeaponClass’, ‘map choice’, ‘Score’,
+‘Damage’, winning/losing the match, and ‘GameType’ as input
+features?</h3>
 <p>Call of Duty: Black Ops Cold War is an easy-to-learn yet hard to
 master game, where there is not a single defined way in order to succeed
 personally and as a team in an online setting. Most players have found
