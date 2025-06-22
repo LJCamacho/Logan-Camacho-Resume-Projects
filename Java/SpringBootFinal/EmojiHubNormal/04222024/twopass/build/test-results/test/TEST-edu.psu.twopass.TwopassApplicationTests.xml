@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="edu.psu.twopass.TwopassApplicationTests" tests="1" skipped="0" failures="0" errors="0" timestamp="2024-05-04T20:35:29" hostname="BLUNGBOX" time="0.406">
+  <properties/>
+  <testcase name="contextLoads()" classname="edu.psu.twopass.TwopassApplicationTests" time="0.406"/>
+  <system-out><![CDATA[16:35:28.152 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [edu.psu.twopass.TwopassApplicationTests]: TwopassApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+16:35:28.202 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration edu.psu.twopass.TwopassApplication for test class edu.psu.twopass.TwopassApplicationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2024-05-04T16:35:28.382-04:00  INFO 11088 --- [twopass] [    Test worker] e.psu.twopass.TwopassApplicationTests    : Starting TwopassApplicationTests using Java 21.0.1 with PID 11088 (started by Blungus in Z:\Java Business\Jeff Bezo's Emporium\EmojiHubNormal\04222024\twopass)
+2024-05-04T16:35:28.383-04:00  INFO 11088 --- [twopass] [    Test worker] e.psu.twopass.TwopassApplicationTests    : No active profile set, falling back to 1 default profile: "default"
+2024-05-04T16:35:28.765-04:00  WARN 11088 --- [twopass] [    Test worker] o.s.security.core.userdetails.User       : User.withDefaultPasswordEncoder() is considered unsafe for production and is only intended for sample applications.
+2024-05-04T16:35:28.857-04:00  INFO 11088 --- [twopass] [    Test worker] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page template: index
+2024-05-04T16:35:28.932-04:00  INFO 11088 --- [twopass] [    Test worker] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@5d318e91, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@298b64f7, org.springframework.security.web.context.SecurityContextHolderFilter@78307a56, org.springframework.security.web.header.HeaderWriterFilter@3d40a3b4, org.springframework.web.filter.CorsFilter@740b6628, org.springframework.security.web.authentication.logout.LogoutFilter@7730ef88, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter@6fe595dc, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@23ad71bf, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@1983b48a, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@27fe059d, org.springframework.security.web.access.ExceptionTranslationFilter@b5c6a30, org.springframework.security.web.access.intercept.AuthorizationFilter@7b2bf745]
+2024-05-04T16:35:29.055-04:00  WARN 11088 --- [twopass] [    Test worker] o.s.s.c.a.web.builders.WebSecurity       : You are asking Spring Security to ignore Ant [pattern='/css/**']. This is not recommended -- please use permitAll via HttpSecurity#authorizeHttpRequests instead.
+2024-05-04T16:35:29.055-04:00  INFO 11088 --- [twopass] [    Test worker] o.s.s.web.DefaultSecurityFilterChain     : Will not secure Ant [pattern='/css/**']
+2024-05-04T16:35:29.055-04:00  WARN 11088 --- [twopass] [    Test worker] o.s.s.c.a.web.builders.WebSecurity       : You are asking Spring Security to ignore Ant [pattern='/js/**']. This is not recommended -- please use permitAll via HttpSecurity#authorizeHttpRequests instead.
+2024-05-04T16:35:29.055-04:00  INFO 11088 --- [twopass] [    Test worker] o.s.s.web.DefaultSecurityFilterChain     : Will not secure Ant [pattern='/js/**']
+2024-05-04T16:35:29.055-04:00  WARN 11088 --- [twopass] [    Test worker] o.s.s.c.a.web.builders.WebSecurity       : You are asking Spring Security to ignore Ant [pattern='/images/**']. This is not recommended -- please use permitAll via HttpSecurity#authorizeHttpRequests instead.
+2024-05-04T16:35:29.055-04:00  INFO 11088 --- [twopass] [    Test worker] o.s.s.web.DefaultSecurityFilterChain     : Will not secure Ant [pattern='/images/**']
+2024-05-04T16:35:29.055-04:00  WARN 11088 --- [twopass] [    Test worker] o.s.s.c.a.web.builders.WebSecurity       : You are asking Spring Security to ignore Ant [pattern='*.jpg']. This is not recommended -- please use permitAll via HttpSecurity#authorizeHttpRequests instead.
+2024-05-04T16:35:29.055-04:00  INFO 11088 --- [twopass] [    Test worker] o.s.s.web.DefaultSecurityFilterChain     : Will not secure Ant [pattern='*.jpg']
+2024-05-04T16:35:29.055-04:00  WARN 11088 --- [twopass] [    Test worker] o.s.s.c.a.web.builders.WebSecurity       : You are asking Spring Security to ignore Ant [pattern='main.css']. This is not recommended -- please use permitAll via HttpSecurity#authorizeHttpRequests instead.
+2024-05-04T16:35:29.055-04:00  INFO 11088 --- [twopass] [    Test worker] o.s.s.web.DefaultSecurityFilterChain     : Will not secure Ant [pattern='main.css']
+*** DATABASE LOADER STARTING ***
+2024-05-04T16:35:29.083-04:00  INFO 11088 --- [twopass] [    Test worker] e.psu.twopass.TwopassApplicationTests    : Started TwopassApplicationTests in 0.8 seconds (process running for 1.346)
+]]></system-out>
+  <system-err><![CDATA[WARNING: A Java agent has been loaded dynamically (C:\Users\Blungus\.gradle\caches\modules-2\files-2.1\net.bytebuddy\byte-buddy-agent\1.14.12\be4984cb6fd1ef1d11f218a648889dfda44b8a15\byte-buddy-agent-1.14.12.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+</testsuite>

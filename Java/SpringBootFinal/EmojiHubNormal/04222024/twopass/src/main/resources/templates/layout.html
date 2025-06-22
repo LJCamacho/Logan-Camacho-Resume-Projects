@@ -1,0 +1,68 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+
+<head>
+
+    <title>The tippy</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+
+<img id="background" src="/BlissBackground.jpg" th:background="global" alt="background">
+    <th:block th:fragment="header">
+        <header>
+            <img id="logo" src="/The%20thinkerNew%20-%20Copy.jpg" alt="logo">
+            <h1 class="display-1">Emoji Hub</h1>
+            <p class="lead">Get your freaky faces here!</p>
+
+            <nav class="navbar navbar-expand-lg bg-body-tertiary">
+                <div class="container-fluid">
+                    <!--            <a class="navbar-brand" href="#">Navbar</a>-->
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav">
+                            <li class="nav-item">
+                                <a class="nav-link active" aria-current="page" href="/">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/contact">Contact Us</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/about">About Us</a>
+                            </li>
+                            <li class="nav-item" sec:authorize="isAnonymous()">
+                                <a class="nav-link" href="/login">Login</a>
+                            </li>
+                            <li class="nav-item" sec:authorize="isAuthenticated()">
+                                <span>Hello <span sec:authentication="name"></span></span>
+                            </li>
+
+
+                            <!--                    <li class="nav-item">-->
+                            <!--                        <a class="nav-link disabled" aria-disabled="true">Disabled</a>-->
+                            <!--                    </li>-->
+                        </ul>
+                        <form class="d-flex" role="search" method="get" action="/search">
+                            <input class="form-control me-2" name="query" type="search" placeholder="Search" aria-label="Search">
+                            <button class="btn btn-outline-success" type="submit">Search</button>
+                        </form>
+                    </div>
+                </div>
+            </nav>
+        </header>
+    </th:block>
+
+    <th:block th:fragment="footer">
+        <footer>
+            <form sec:authorize="isAuthenticated()" th:action="@{'/logout'}" method="post">
+                <input type="submit" value="Logout" />
+            </form>
+            <p>&copy; 2024 Emoji Hub</p>
+        </footer>
+    </th:block>
+
+</body>
+</html>
